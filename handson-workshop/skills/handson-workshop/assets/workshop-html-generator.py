@@ -1,0 +1,1109 @@
+#!/usr/bin/env python3
+"""
+workshop-html-generator.py — Render WORKSHOP.md → styled, self-contained WORKSHOP.html
+
+Features:
+  - Sticky sidebar table of contents with JS scroll-position highlighting
+  - Quiz sections wrapped in a blue callout box
+  - Answer key sections wrapped in collapsible <details> elements
+  - Syntax-highlighted fenced code blocks (Pygments github-dark style)
+  - Diagram PNGs/SVGs embedded as base64 data URIs (fully self-contained)
+  - Modern learning-conducive color theme (calm blue/navy/teal palette)
+
+Dependencies: pip install markdown beautifulsoup4 pygments
+
+Usage:
+    python3 workshop-html-generator.py WORKSHOP.md
+    python3 workshop-html-generator.py WORKSHOP.md -o out.html
+    python3 workshop-html-generator.py WORKSHOP.md --no-embed-images
+"""
+
+import argparse
+import base64
+import re
+import sys
+from pathlib import Path
+
+import markdown
+from bs4 import BeautifulSoup, Tag
+from pygments.formatters import HtmlFormatter
+from pygments.styles import get_style_by_name
+
+# ── CSS strategy ─────────────────────────────────────────────────────────────
+#
+# Base: Pico.css 2.x (classless), inlined from assets/pico.classless.min.css.
+# Pico handles body / html / typography / mobile responsive defaults / iOS
+# Safari quirks. We were reinventing this and getting iOS rendering wrong.
+#
+# CUSTOM_CSS layers on top of Pico for the bits Pico doesn't know about:
+#   - Sticky sidebar with table-of-contents and scroll-position highlighting
+#   - Mobile hamburger / overlay
+#   - Quiz callout boxes
+#   - Collapsible answer-key <details>
+#   - Click-to-enlarge diagram lightbox
+#   - Pygments-rendered code blocks
+#   - Fluid typography via clamp() (replaces our hand-rolled media queries)
+#
+# Pygments github-dark CSS is appended after CUSTOM_CSS so it takes precedence
+# over Pico's <pre> styling for the .codehilite class.
+
+# Path relative to this file
+PICO_CSS_PATH = Path(__file__).parent / 'pico.classless.min.css'
+
+
+# Custom palette overrides (Pico's CSS variables) — keep colors close to the
+# old hand-rolled theme. Pico exposes ~80 vars; we only override the ones that
+# matter for our visual identity.
+PICO_OVERRIDES = """
+/* ──────────────────────────────────────────────────────────────────────────
+   Theme variables. We support both light and dark mode via prefers-color-
+   scheme (Pico's same mechanism). Two layers:
+
+     :root, [data-theme=light]               → light mode (default)
+     @media (prefers-color-scheme: dark)
+       :root:not([data-theme=light])         → dark mode (auto)
+     [data-theme=dark]                       → dark mode (explicit)
+
+   This means iOS in dark mode automatically gets dark theme, but a user can
+   force either theme by adding data-theme="light" or "dark" on <html>.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root, [data-theme=light] {
+  /* Map our palette onto Pico's classless variables. */
+  --pico-primary:                       #2563eb;
+  --pico-primary-hover:                 #1d4ed8;
+  --pico-primary-focus:                 rgba(37, 99, 235, 0.25);
+  --pico-primary-inverse:               #ffffff;
+  --pico-text-decoration:               none;
+
+  /* Pull Pico's body and heading colors firmly to our dark-text values
+     so contrast is high regardless of Pico's defaults. */
+  --pico-color:                         #1e293b;
+  --pico-h1-color:                      #0f172a;
+  --pico-h2-color:                      #0f172a;
+  --pico-h3-color:                      #0f172a;
+  --pico-h4-color:                      #1e293b;
+  --pico-muted-color:                   #475569;
+
+  /* Fluid typography — scales smoothly across viewports without breakpoints.
+     ~17 px on phones, up to ~19 px on wide displays. */
+  --pico-font-size:                     clamp(1rem, 0.92rem + 0.4vw, 1.1875rem);
+  --pico-line-height:                   1.65;
+
+  /* Page palette (light mode) */
+  --bg:              #eef2f7;
+  --surface:         #ffffff;
+  --sidebar-bg:      #18243f;
+  --sidebar-text:    #8aafd0;
+  --sidebar-head:    #ccddf5;
+  --sidebar-active:  #60a5fa;
+  --sidebar-hover:   rgba(255,255,255,.06);
+  --text:            #1e293b;
+  --text-muted:      #475569;
+  --heading:         #0f172a;
+  --accent:          #2563eb;
+  --accent2:         #0891b2;
+  --code-bg:         #0d1117;
+  --code-fg:         #e6edf3;
+  --code-border:     #21262d;
+  --ic-bg:           #dbeafe;
+  --ic-fg:           #1e40af;
+  --quiz-bg:         #eff6ff;
+  --quiz-border:     #3b82f6;
+  --quiz-text-link-bg: #e0f2fe;
+  --ans-border:      #16a34a;
+  --ans-sum-bg:      #dcfce7;
+  --ans-sum-text:    #14532d;
+  --ans-body-bg:     #f0fdf4;
+  --border:          #e2e8f0;
+  --table-row-hover: var(--quiz-bg);
+  --meta-bg:         #f8faff;
+  --shadow:          0 1px 4px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+}
+
+/* Auto dark mode: applies whenever the OS prefers dark and the user
+   hasn't explicitly forced light via data-theme="light". */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme=light]) {
+    --pico-color:                       #e2e8f0;
+    --pico-h1-color:                    #f1f5f9;
+    --pico-h2-color:                    #f1f5f9;
+    --pico-h3-color:                    #cbd5e1;
+    --pico-h4-color:                    #e2e8f0;
+    --pico-muted-color:                 #94a3b8;
+    --pico-primary:                     #60a5fa;
+    --pico-primary-hover:               #93c5fd;
+
+    --bg:              #0b1220;       /* almost-black navy, less harsh than pure black */
+    --surface:         #131c2e;       /* card surface — lighter than body for separation */
+    --sidebar-bg:      #0d1422;       /* slightly darker than body */
+    --sidebar-text:    #94a3b8;
+    --sidebar-head:    #cbd5e1;
+    --sidebar-active:  #93c5fd;
+    --sidebar-hover:   rgba(255,255,255,.06);
+    --text:            #e2e8f0;
+    --text-muted:      #94a3b8;
+    --heading:         #f1f5f9;
+    --accent:          #60a5fa;       /* brighter on dark */
+    --accent2:         #22d3ee;
+    --code-bg:         #060a13;       /* a hair darker than the body */
+    --code-fg:         #e6edf3;
+    --code-border:     #1e2a3d;
+    --ic-bg:           #1e3a5f;       /* inline-code background */
+    --ic-fg:           #bfdbfe;
+    --quiz-bg:         #122236;
+    --quiz-border:     #3b82f6;
+    --quiz-text-link-bg: #1e3a5f;
+    --ans-border:      #4ade80;
+    --ans-sum-bg:      #143124;
+    --ans-sum-text:    #bbf7d0;
+    --ans-body-bg:     #0d1f17;
+    --border:          #243049;
+    --table-row-hover: #1a253c;
+    --meta-bg:         #131c2e;
+    --shadow:          0 2px 8px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+  }
+}
+
+/* Explicit dark theme: applies when user/site forces data-theme="dark". */
+[data-theme=dark] {
+  --pico-color:                       #e2e8f0;
+  --pico-h1-color:                    #f1f5f9;
+  --pico-h2-color:                    #f1f5f9;
+  --pico-h3-color:                    #cbd5e1;
+  --pico-h4-color:                    #e2e8f0;
+  --pico-muted-color:                 #94a3b8;
+  --pico-primary:                     #60a5fa;
+  --pico-primary-hover:               #93c5fd;
+
+  --bg:              #0b1220;
+  --surface:         #131c2e;
+  --sidebar-bg:      #0d1422;
+  --sidebar-text:    #94a3b8;
+  --sidebar-head:    #cbd5e1;
+  --sidebar-active:  #93c5fd;
+  --sidebar-hover:   rgba(255,255,255,.06);
+  --text:            #e2e8f0;
+  --text-muted:      #94a3b8;
+  --heading:         #f1f5f9;
+  --accent:          #60a5fa;
+  --accent2:         #22d3ee;
+  --code-bg:         #060a13;
+  --code-fg:         #e6edf3;
+  --code-border:     #1e2a3d;
+  --ic-bg:           #1e3a5f;
+  --ic-fg:           #bfdbfe;
+  --quiz-bg:         #122236;
+  --quiz-border:     #3b82f6;
+  --quiz-text-link-bg: #1e3a5f;
+  --ans-border:      #4ade80;
+  --ans-sum-bg:      #143124;
+  --ans-sum-text:    #bbf7d0;
+  --ans-body-bg:     #0d1f17;
+  --border:          #243049;
+  --table-row-hover: #1a253c;
+  --meta-bg:         #131c2e;
+  --shadow:          0 2px 8px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: light dark;        /* native widgets follow OS theme */
+  scroll-padding-top: .5rem;       /* nicer landing for anchor links */
+}
+
+/* Defence in depth: prevent any wide child from triggering iOS Safari's
+   "scale-to-fit-page" behavior (the symptom: body text appears tiny).
+   Use `clip` instead of `hidden` — `overflow-x: hidden` on <body> breaks
+   scroll-to-anchor on iOS Safari (clicking a TOC link does nothing).
+   `clip` clips overflow without establishing a scroll container, which
+   leaves the document's natural scroll/anchor behavior intact. */
+body {
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Each heading gets a small scroll-margin so when an anchor lands on it,
+   it isn't pinned to viewport top under the mobile hamburger button. */
+main.content-wrap :is(h1, h2, h3, h4) { scroll-margin-top: .75rem; }
+
+/* ── Layout: fixed sidebar + flexible main ───────────────────────────────── */
+
+main { padding-bottom: 5rem; }
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+#main {
+  flex: 1;
+  padding: 2.5rem clamp(.75rem, 3vw, 2.5rem) 5rem;
+  margin-left: 272px;     /* clear the sidebar on desktop */
+}
+
+main.content-wrap {
+  /* Pico's <main> already gets sensible padding/max-width. We add a card. */
+  max-width: 880px;
+  margin: 0 auto;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: clamp(1.25rem, 4vw, 3rem) clamp(1rem, 5vw, 3.5rem);
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 860px) {
+  #main { margin-left: 0; padding: .75rem .65rem 4rem; }
+  main.content-wrap {
+    padding: 1.5rem 1.1rem 2rem;
+    border-radius: 8px;
+  }
+}
+
+/* ── Typography accents ─────────────────────────────────────────────────── */
+
+main.content-wrap h1 {
+  font-size: clamp(1.55rem, 1.2rem + 1.6vw, 2.1rem);
+  font-weight: 800;
+  color: var(--heading);
+  letter-spacing: -.02em;
+  margin-bottom: .4rem;
+  line-height: 1.2;
+}
+
+main.content-wrap h2 {
+  font-size: clamp(1.25rem, 1rem + 0.9vw, 1.55rem);
+  font-weight: 700;
+  color: var(--heading);
+  margin: 2.2rem 0 .8rem;
+  padding-left: .75rem;
+  border-left: 4px solid var(--accent);
+  line-height: 1.3;
+}
+
+main.content-wrap h3 {
+  font-size: clamp(1.1rem, 1rem + 0.4vw, 1.25rem);
+  font-weight: 600;
+  color: var(--accent2);
+  margin: 1.4rem 0 .55rem;
+}
+
+main.content-wrap h4 {
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.1rem);
+  font-weight: 600;
+  color: var(--text);
+  margin: 1.1rem 0 .4rem;
+}
+
+main.content-wrap p { margin: .65rem 0; }
+main.content-wrap ul, main.content-wrap ol { padding-left: 1.4rem; margin: .65rem 0; }
+main.content-wrap li { margin: .35rem 0; }
+main.content-wrap hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+main.content-wrap blockquote {
+  border-left: 4px solid var(--accent);
+  background: var(--quiz-bg);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 6px 6px 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.subtitle {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border);
+  font-style: normal;
+}
+.subtitle p { margin: 0; }
+
+main.content-wrap a {
+  color: var(--accent);
+  text-decoration: none;
+  --pico-text-decoration: none;
+}
+main.content-wrap a:hover { text-decoration: underline; }
+
+/* Inline code (Pico styles <code> reasonably; tighten visual treatment) */
+main.content-wrap :not(pre) > code {
+  font-family: "Roboto Mono", "JetBrains Mono", "Cascadia Code", "Menlo",
+               monospace;
+  font-size: .87em;
+  background: var(--ic-bg);
+  color: var(--ic-fg);
+  padding: .12em .38em;
+  border-radius: 4px;
+}
+
+/* ── Code blocks (Pygments output) ──────────────────────────────────────── */
+
+.codehilite {
+  background: var(--code-bg) !important;
+  border-radius: 8px;
+  margin: 1rem 0;
+  border: 1px solid var(--code-border);
+  overflow: hidden;
+}
+
+.codehilite pre, main.content-wrap pre {
+  background: var(--code-bg) !important;
+  border: 1px solid var(--code-border);
+  border-radius: 8px;
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  color: var(--code-fg);
+  font-size: clamp(.85rem, 0.78rem + 0.3vw, .92rem);
+  line-height: 1.55;
+}
+
+.codehilite pre {
+  background: transparent !important;
+  border: none;
+  margin: 0;
+  border-radius: 0;
+}
+
+.codehilite pre code, main.content-wrap pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+main.content-wrap p code, main.content-wrap li code { word-break: break-word; }
+
+/* ── Tables ─────────────────────────────────────────────────────────────── */
+
+main.content-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .92rem;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+main.content-wrap th {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-head);
+  padding: .55rem .85rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: .88rem;
+}
+main.content-wrap td {
+  padding: .5rem .85rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+main.content-wrap tbody tr:last-child td { border-bottom: none; }
+main.content-wrap tbody tr:hover td { background: var(--table-row-hover); }
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1rem 0;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+.table-wrapper table { margin: 0; box-shadow: none; border-radius: 0; }
+
+/* ── Sidebar ────────────────────────────────────────────────────────────── */
+
+#sidebar {
+  width: 272px;
+  background: var(--sidebar-bg);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  overflow-y: auto;
+  padding: 1.5rem 0 2rem;
+  z-index: 100;
+  transition: transform .25s ease;
+}
+#sidebar .sidebar-label {
+  color: var(--sidebar-head);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 0 1.25rem .75rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  margin-bottom: .75rem;
+}
+/* Pico styles <nav> as a horizontal flex row of links — undo that for the
+   sidebar so headings stack vertically. */
+#sidebar nav {
+  display: block;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+#sidebar nav ul,
+#sidebar nav ol {
+  display: block;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+#sidebar nav li { display: block; margin: 0; padding: 0; }
+#sidebar nav a {
+  display: block;
+  width: 100%;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  --pico-text-decoration: none;
+  padding: .35rem 1.25rem;
+  font-size: .9rem;
+  border-left: 2px solid transparent;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color .13s, background .13s, border-color .13s;
+  flex: none;       /* in case Pico's flex still applies somewhere */
+}
+#sidebar nav a:hover { color: #fff; background: var(--sidebar-hover); text-decoration: none; }
+#sidebar nav a.h2-link { color: #afc9e8; padding-left: 1.5rem; font-weight: 500; }
+#sidebar nav a.h3-link { padding-left: 2.4rem; font-size: .85rem; }
+#sidebar nav a.active {
+  color: var(--sidebar-active) !important;
+  border-left-color: var(--sidebar-active);
+  background: rgba(96,165,250,.12);
+}
+
+@media (max-width: 860px) {
+  /* Sidebar slides in. min-width MUST be 0 to stop iOS treating the
+     off-screen sidebar as a "minimum content width" floor. */
+  #sidebar {
+    transform: translateX(-100%);
+    width: 88vw;
+    min-width: 0;
+    max-width: 320px;
+  }
+  #sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.35); }
+}
+
+#mobile-nav-toggle {
+  display: none;
+  position: fixed;
+  top: .8rem; left: .8rem;
+  z-index: 200;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-head);
+  border: none;
+  border-radius: 8px;
+  width: 2.6rem; height: 2.6rem;
+  font-size: 1.25rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+  line-height: 1;
+}
+@media (max-width: 860px) { #mobile-nav-toggle { display: flex; } }
+
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 99;
+}
+#sidebar-overlay.open { display: block; }
+
+/* ── Images and lightbox ────────────────────────────────────────────────── */
+
+main.content-wrap img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.5rem auto;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  background: #ffffff;
+  cursor: zoom-in;
+}
+
+@media (max-width: 860px) {
+  main.content-wrap img {
+    margin: 1rem -.5rem;
+    max-width: calc(100% + 1rem);
+    border-radius: 4px;
+  }
+}
+@media (max-width: 480px) {
+  main.content-wrap img {
+    margin: .85rem -.9rem;
+    max-width: calc(100% + 1.8rem);
+    border-radius: 0;
+    box-shadow: none;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.85);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  cursor: zoom-out;
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.6);
+  cursor: default;
+}
+.lightbox-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: rgba(255,255,255,.9);
+  color: #111;
+  border: none;
+  border-radius: 50%;
+  width: 2.6rem; height: 2.6rem;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+/* ── Quiz callout boxes ─────────────────────────────────────────────────── */
+
+.quiz-section {
+  background: var(--quiz-bg);
+  border-left: 4px solid var(--quiz-border);
+  border-radius: 0 8px 8px 0;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+}
+.quiz-section h3 { color: var(--accent); margin-top: 0; }
+.quiz-section p, .quiz-section li, .quiz-section { color: var(--text); }
+.quiz-section p a[href^="#answer-key"] {
+  display: inline-block;
+  font-weight: 600;
+  color: var(--accent2);
+  padding: .2rem .55rem;
+  background: var(--quiz-text-link-bg);
+  border-radius: 4px;
+  font-size: .92rem;
+  text-decoration: none;
+}
+
+/* ── Answer key (collapsible) ───────────────────────────────────────────── */
+
+details.answer-key-section {
+  border: 1px solid var(--ans-sum-bg);
+  border-left: 4px solid var(--ans-border);
+  border-radius: 0 8px 8px 0;
+  margin: .75rem 0;
+  overflow: hidden;
+}
+details.answer-key-section > summary {
+  background: var(--ans-sum-bg);
+  padding: .7rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ans-sum-text);
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+details.answer-key-section > summary::-webkit-details-marker { display: none; }
+details.answer-key-section > summary::before {
+  content: "\\25B6";
+  font-size: .65em;
+  transition: transform .2s ease;
+  color: var(--ans-border);
+  flex-shrink: 0;
+}
+details.answer-key-section[open] > summary::before { transform: rotate(90deg); }
+.answer-body {
+  padding: 1rem 1.25rem;
+  background: var(--ans-body-bg);
+  color: var(--text);
+}
+.answer-body p, .answer-body li { color: var(--text); }
+.answer-body p a { color: var(--ans-border); font-weight: 600; }
+
+/* ── Meta info block (Time / Difficulty / Exam) ─────────────────────────── */
+
+.meta-block {
+  background: var(--meta-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .75rem 1.1rem;
+  margin: 1rem 0 2rem;
+  color: var(--text);
+}
+.meta-block p { margin: .2rem 0; color: var(--text); }
+
+/* ── Exam CTA button ────────────────────────────────────────────────────── */
+
+.exam-cta { text-align: center; margin: 2rem 0; }
+.exam-cta a {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff !important;
+  padding: .3rem .85rem;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: .9rem;
+  text-decoration: none !important;
+  box-shadow: 0 2px 6px rgba(37,99,235,.2);
+  transition: background .15s, transform .1s;
+}
+.exam-cta a:hover { background: #1d4ed8; transform: translateY(-1px); }
+/* Inside .meta-block, links are inline within prose — render as text links, not buttons. */
+.meta-block .exam-cta { text-align: left; margin: 0; }
+.meta-block .exam-cta a {
+  display: inline;
+  background: transparent;
+  color: var(--accent) !important;
+  padding: 0;
+  border-radius: 0;
+  font-weight: 600;
+  font-size: inherit;
+  text-decoration: underline !important;
+  box-shadow: none;
+}
+.meta-block .exam-cta a:hover { background: transparent; transform: none; }
+@media (max-width: 860px) {
+  .exam-cta a { padding: .35rem .85rem; }
+}
+
+/* ── Print ──────────────────────────────────────────────────────────────── */
+
+@media print {
+  .lightbox, #mobile-nav-toggle, #sidebar-overlay { display: none !important; }
+  #sidebar { display: none; }
+  #main { margin-left: 0; }
+  main.content-wrap { box-shadow: none; padding: 0; }
+}
+"""
+
+# ── Sidebar scroll-highlight JS ──────────────────────────────────────────────
+
+SIDEBAR_JS = r"""
+(function () {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebar-overlay');
+  var toggle  = document.getElementById('mobile-nav-toggle');
+  if (!sidebar) return;
+
+  // ── Mobile open/close ──────────────────────────────────────────────────
+  function openSidebar() {
+    sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  if (toggle)  toggle.addEventListener('click', openSidebar);
+  if (overlay) overlay.addEventListener('click', closeSidebar);
+
+  // ── Scroll-position highlight ──────────────────────────────────────────
+  var links = Array.from(sidebar.querySelectorAll('nav a'));
+  var targets = links.map(function (a) {
+    return document.getElementById(a.getAttribute('href').slice(1));
+  }).filter(Boolean);
+
+  // ── TOC link click handler ─────────────────────────────────────────────
+  // We take over the scroll instead of letting the browser's default
+  // anchor-scroll fire. Reasons:
+  //   1. On mobile, openSidebar() puts `overflow: hidden` on <body>. When the
+  //      user taps a TOC link, the click handler removes that lock and the
+  //      browser then tries to do its native anchor-scroll. iOS Safari
+  //      INTERMITTENTLY misfires this (the scroll target is computed against
+  //      the locked-state document) — symptom: only some anchors land in the
+  //      right place.
+  //   2. If a target is inside a collapsed <details> (answer-key sections),
+  //      we must open it BEFORE scrolling, otherwise the bounding rect is
+  //      wrong.
+  //   3. A double-rAF after closeSidebar() lets layout settle (body overflow
+  //      restored, sidebar transition started) before we read positions.
+  links.forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var hash = a.getAttribute('href') || '';
+      if (hash.charAt(0) !== '#' || hash.length < 2) return;
+      var target = document.getElementById(hash.slice(1));
+      if (!target) return;
+
+      e.preventDefault();
+
+      // Reflect the new hash in the URL (so back/forward and refresh work)
+      // without triggering a default scroll.
+      if (history.pushState) history.pushState(null, '', hash);
+
+      // Open any collapsed <details> ancestor so the target is in flow.
+      var d = target.closest ? target.closest('details') : null;
+      if (d && !d.open) d.open = true;
+
+      if (window.innerWidth <= 860) closeSidebar();
+
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          var rect = target.getBoundingClientRect();
+          var top  = rect.top + window.pageYOffset - 8;
+          window.scrollTo({ top: top, behavior: 'smooth' });
+        });
+      });
+    });
+  });
+
+  var current = null;
+
+  function activate(el) {
+    if (current === el) return;
+    current = el;
+    links.forEach(function (a) { a.classList.remove('active'); });
+    var a = sidebar.querySelector('a[href="#' + el.id + '"]');
+    if (!a) return;
+    a.classList.add('active');
+    var sRect = sidebar.getBoundingClientRect();
+    var aRect = a.getBoundingClientRect();
+    if (aRect.top < sRect.top + 48 || aRect.bottom > sRect.bottom - 48) {
+      a.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function onScroll() {
+    var scrollY = window.scrollY + 130;
+    var active = targets[0];
+    for (var i = 0; i < targets.length; i++) {
+      if (targets[i] && targets[i].getBoundingClientRect().top + window.scrollY <= scrollY) {
+        active = targets[i];
+      }
+    }
+    if (active) activate(active);
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // ── Diagram lightbox: tap any image inside .content-wrap to enlarge ────
+  var lightbox = document.getElementById('lightbox');
+  var lbImg    = lightbox ? lightbox.querySelector('img') : null;
+  var lbClose  = lightbox ? lightbox.querySelector('.lightbox-close') : null;
+  if (lightbox && lbImg) {
+    document.querySelectorAll('.content-wrap img').forEach(function (img) {
+      img.addEventListener('click', function () {
+        lbImg.src = img.src;
+        lbImg.alt = img.alt || '';
+        lightbox.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      });
+    });
+    function closeLb() {
+      lightbox.classList.remove('open');
+      lbImg.src = '';
+      document.body.style.overflow = '';
+    }
+    lightbox.addEventListener('click', function (e) { if (e.target === lightbox) closeLb(); });
+    if (lbClose) lbClose.addEventListener('click', closeLb);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLb();
+    });
+  }
+})();
+"""
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def slugify(text):
+    text = text.lower().strip()
+    text = re.sub(r'[^\w\s-]', '', text)
+    text = re.sub(r'[\s_]+', '-', text)
+    text = re.sub(r'-+', '-', text)
+    return text.strip('-')
+
+
+def ensure_heading_ids(soup):
+    counts = {}
+    for tag in soup.find_all(['h1', 'h2', 'h3', 'h4']):
+        if tag.get('id'):
+            continue
+        slug = slugify(tag.get_text())
+        base = slug
+        if slug in counts:
+            counts[slug] += 1
+            slug = f'{slug}-{counts[slug]}'
+        else:
+            counts[slug] = 0
+        tag['id'] = slug
+
+
+def embed_images(soup, base_dir, embed=True):
+    MIME = {'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+            '.svg': 'image/svg+xml', '.gif': 'image/gif', '.webp': 'image/webp'}
+    for img in soup.find_all('img'):
+        src = img.get('src', '')
+        if not src or src.startswith('data:') or src.startswith('http'):
+            continue
+        p = base_dir / src
+        if not p.exists():
+            continue
+        if not embed:
+            continue
+        mime = MIME.get(p.suffix.lower(), 'image/png')
+        data = base64.b64encode(p.read_bytes()).decode()
+        img['src'] = f'data:{mime};base64,{data}'
+
+
+def build_sidebar(soup):
+    items = []
+    for tag in soup.find_all(['h2', 'h3']):
+        hid = tag.get('id')
+        text = tag.get_text(strip=True)
+        if not hid or not text:
+            continue
+        items.append((tag.name, text, hid))
+
+    if not items:
+        return ''
+
+    lines = []
+    for level, text, hid in items:
+        css = 'h2-link' if level == 'h2' else 'h3-link'
+        # Truncate long text for sidebar
+        display = text if len(text) <= 46 else text[:43] + '…'
+        lines.append(f'<a class="{css}" href="#{hid}" title="{text}">{display}</a>\n')
+
+    nav = '    '.join(lines)
+    return (
+        '<div id="sidebar">\n'
+        '  <div class="sidebar-label">Contents</div>\n'
+        f'  <nav>\n    {nav}  </nav>\n'
+        '</div>\n'
+    )
+
+
+def wrap_quiz_sections(soup):
+    """Wrap Quiz-N h3 + following siblings (until next heading/hr) in .quiz-section."""
+    for h3 in list(soup.find_all('h3', id=lambda x: x and x.startswith('quiz-'))):
+        siblings = []
+        for sib in h3.next_siblings:
+            if isinstance(sib, Tag) and sib.name in ('h2', 'h3', 'h4', 'hr'):
+                break
+            siblings.append(sib)
+        wrapper = soup.new_tag('div', **{'class': 'quiz-section'})
+        h3.insert_before(wrapper)
+        wrapper.append(h3.extract())
+        for s in siblings:
+            wrapper.append(s.extract())
+
+
+def wrap_answer_key_sections(soup):
+    """Wrap answer-key-module-N h3 + content in collapsible <details>."""
+    for h3 in list(soup.find_all('h3', id=lambda x: x and x.startswith('answer-key--module-'))):
+        hid = h3.get('id')
+        siblings = []
+        for sib in h3.next_siblings:
+            if isinstance(sib, Tag) and sib.name in ('h2', 'h3', 'h4', 'hr'):
+                break
+            siblings.append(sib)
+
+        title = h3.get_text(strip=True)
+        details = soup.new_tag('details', **{'class': 'answer-key-section', 'id': hid})
+        summary = soup.new_tag('summary')
+        summary.string = title
+        body_div = soup.new_tag('div', **{'class': 'answer-body'})
+        details.append(summary)
+        details.append(body_div)
+
+        h3.insert_before(details)
+        h3.extract()  # id moved to <details>
+        for s in siblings:
+            body_div.append(s.extract())
+
+
+def style_meta_block(soup):
+    """Wrap the Time/Difficulty/Exam bold-paragraphs after h1 in a meta-block."""
+    h1 = soup.find('h1')
+    if not h1:
+        return
+
+    # Mark first blockquote (the > subtitle) as subtitle
+    nxt = h1.find_next_sibling()
+    if nxt and nxt.name == 'blockquote':
+        nxt['class'] = nxt.get('class', []) + ['subtitle']
+        nxt = nxt.find_next_sibling()
+
+    # Collect consecutive <p> that start with <strong> (meta lines)
+    meta_ps = []
+    cur = nxt
+    while cur and isinstance(cur, Tag) and cur.name == 'p':
+        strong = cur.find('strong')
+        if strong and cur.get_text(strip=True)[:5] == strong.get_text(strip=True)[:5]:
+            meta_ps.append(cur)
+            cur = cur.find_next_sibling()
+        else:
+            break
+
+    if meta_ps:
+        wrapper = soup.new_tag('div', **{'class': 'meta-block'})
+        meta_ps[0].insert_before(wrapper)
+        for p in meta_ps:
+            wrapper.append(p.extract())
+
+
+def wrap_tables(soup):
+    """Wrap tables in .table-wrapper for horizontal scroll on mobile."""
+    for table in soup.find_all('table'):
+        if table.find_parent(class_='table-wrapper'):
+            continue
+        wrapper = soup.new_tag('div', **{'class': 'table-wrapper'})
+        table.insert_before(wrapper)
+        wrapper.append(table.extract())
+
+
+def style_exam_links(soup):
+    """Wrap paragraphs that link to exam.html in .exam-cta."""
+    for a in soup.find_all('a', href=lambda x: x and 'exam.html' in x):
+        p = a.find_parent('p')
+        if p and 'exam-cta' not in p.get('class', []):
+            p['class'] = p.get('class', []) + ['exam-cta']
+
+
+def get_pygments_css():
+    for style_name in ('github-dark', 'one-dark', 'monokai', 'native'):
+        try:
+            style = get_style_by_name(style_name)
+            return HtmlFormatter(style=style).get_style_defs('.codehilite')
+        except Exception:
+            continue
+    return ''
+
+
+# ── Main conversion ──────────────────────────────────────────────────────────
+
+def load_pico_css():
+    """Load Pico.css classless from disk; warn if missing."""
+    if not PICO_CSS_PATH.exists():
+        print(f'WARNING: {PICO_CSS_PATH} missing — falling back to overrides only.',
+              file=sys.stderr)
+        return ''
+    return PICO_CSS_PATH.read_text(encoding='utf-8')
+
+
+def convert(md_path: Path, out_path: Path, embed_img: bool = True):
+    md_text = md_path.read_text(encoding='utf-8')
+    base_dir = md_path.parent
+
+    md_engine = markdown.Markdown(
+        extensions=['extra', 'codehilite'],
+        extension_configs={
+            'codehilite': {
+                'guess_lang': False,
+                'linenums': False,
+                'use_pygments': True,
+            }
+        },
+    )
+    body_html = md_engine.convert(md_text)
+
+    soup = BeautifulSoup(body_html, 'html.parser')
+
+    ensure_heading_ids(soup)
+
+    # Build sidebar BEFORE structural wrapping (all h3 ids still on h3 elements)
+    sidebar_html = build_sidebar(soup)
+
+    embed_images(soup, base_dir, embed=embed_img)
+    style_meta_block(soup)
+    style_exam_links(soup)
+    wrap_tables(soup)
+    wrap_quiz_sections(soup)
+    wrap_answer_key_sections(soup)  # moves answer-key--module-N id from h3 → <details>
+
+    title_tag = soup.find('h1')
+    title_text = title_tag.get_text(strip=True) if title_tag else md_path.stem
+
+    pico_css = load_pico_css()
+    pygments_css = get_pygments_css()
+    content_html = str(soup)
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>{title_text}</title>
+<style>
+/* ── Pico.css 2.x (classless base, MIT licensed) ─────────────────────────── */
+{pico_css}
+
+/* ── Workshop overrides ──────────────────────────────────────────────────── */
+{PICO_OVERRIDES}
+
+/* ── Pygments code highlighting (github-dark) ────────────────────────────── */
+{pygments_css}
+</style>
+</head>
+<body>
+<button id="mobile-nav-toggle" aria-label="Open navigation" title="Open navigation">&#9776;</button>
+<div id="sidebar-overlay"></div>
+{sidebar_html}
+<div id="main">
+  <main class="content-wrap">
+{content_html}
+  </main>
+</div>
+<div id="lightbox" class="lightbox" role="dialog" aria-label="Enlarged diagram">
+  <button class="lightbox-close" aria-label="Close">&times;</button>
+  <img alt="">
+</div>
+<script>
+{SIDEBAR_JS}
+</script>
+</body>
+</html>
+"""
+
+    out_path.write_text(html, encoding='utf-8')
+    kb = out_path.stat().st_size // 1024
+    print(f'Written: {out_path}  ({kb} KB)')
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('md_file', help='Path to WORKSHOP.md')
+    ap.add_argument('-o', '--output',
+                    help='Output path (default: WORKSHOP.html beside the .md)')
+    ap.add_argument('--no-embed-images', action='store_true',
+                    help='Keep image src as relative paths instead of base64')
+    args = ap.parse_args()
+
+    md_path = Path(args.md_file).resolve()
+    if not md_path.exists():
+        sys.exit(f'Error: {md_path} not found')
+
+    out_path = Path(args.output).resolve() if args.output else md_path.with_suffix('.html')
+    convert(md_path, out_path, embed_img=not args.no_embed_images)
+
+
+if __name__ == '__main__':
+    main()
