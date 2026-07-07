@@ -47,11 +47,11 @@ sudo apt install -y librsvg2-bin        # provides rsvg-convert (or: brew instal
 **Via the plugin marketplace (recommended):**
 
 ```text
-/plugin marketplace add joelagnelf/joels-skills
+/plugin marketplace add joelagnel/joels-skills
 /plugin install handson-workshop
 ```
 
-(Replace `joelagnelf/joels-skills` with the GitHub `owner/repo` once published, or pass a local
+(Replace `joelagnel/joels-skills` with the GitHub `owner/repo` once published, or pass a local
 path: `/plugin marketplace add ~/repo/joels-skills`.)
 
 **Or symlink the skills manually:**
@@ -69,7 +69,7 @@ Invoke with `/handson-workshop <topic>`.
 as a shell command. Ask it to install the two skills from this repo:
 
 ```text
-$skill-installer install handson-workshop and handson-diagrams from github joelagnelf/joels-skills
+$skill-installer install handson-workshop and handson-diagrams from github joelagnel/joels-skills
 ```
 
 Under the hood, `skill-installer` runs its own bundled `install-skill-from-github.py` (that helper
@@ -77,7 +77,7 @@ ships with the Codex skill — you don't invoke it from this repo). The equivale
 skill paths to a single `--path`:
 
 ```bash
-install-skill-from-github.py --repo joelagnelf/joels-skills \
+install-skill-from-github.py --repo joelagnel/joels-skills \
   --path handson-workshop/skills/handson-workshop handson-workshop/skills/handson-diagrams
 ```
 
@@ -118,4 +118,4 @@ bash handson-workshop/skills/handson-workshop/assets/serve-workshop.sh git-inter
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Bundles [Pico CSS](https://picocss.com/) (MIT).
+Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Bundles [Pico CSS](https://picocss.com/) (MIT).
