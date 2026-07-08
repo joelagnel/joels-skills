@@ -530,6 +530,14 @@ main.content-wrap img {
   cursor: zoom-in;
 }
 
+/* Tall/narrow diagrams (e.g. a vertical stack of a few boxes) look absurd blown
+   up to the full column — the text inside inflates with them. Cap their display
+   width and keep them centered. Tagged automatically by aspect ratio in
+   embed_images(). The qualified selector outranks the rule above. */
+main.content-wrap img.img-portrait {
+  max-width: min(100%, 380px);
+}
+
 @media (max-width: 860px) {
   main.content-wrap img {
     margin: 1rem -.5rem;
@@ -854,6 +862,15 @@ def ensure_heading_ids(soup):
         tag['id'] = slug
 
 
+def _png_dimensions(data):
+    """Return (width, height) for PNG bytes, or None. Reads the IHDR chunk —
+    no PIL dependency."""
+    if len(data) >= 24 and data[:8] == b'\x89PNG\r\n\x1a\n' and data[12:16] == b'IHDR':
+        return (int.from_bytes(data[16:20], 'big'),
+                int.from_bytes(data[20:24], 'big'))
+    return None
+
+
 def embed_images(soup, base_dir, embed=True):
     MIME = {'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
             '.svg': 'image/svg+xml', '.gif': 'image/gif', '.webp': 'image/webp'}
@@ -864,10 +881,17 @@ def embed_images(soup, base_dir, embed=True):
         p = base_dir / src
         if not p.exists():
             continue
+        raw = p.read_bytes()
+        # Tall/narrow diagrams (a vertical stack of a few boxes) blow up their
+        # own text when stretched to the full column width. Tag portrait PNGs so
+        # the stylesheet can cap their display width (see .img-portrait).
+        dims = _png_dimensions(raw)
+        if dims and dims[1] > dims[0] * 1.25:
+            img['class'] = img.get('class', []) + ['img-portrait']
         if not embed:
             continue
         mime = MIME.get(p.suffix.lower(), 'image/png')
-        data = base64.b64encode(p.read_bytes()).decode()
+        data = base64.b64encode(raw).decode()
         img['src'] = f'data:{mime};base64,{data}'
 
 

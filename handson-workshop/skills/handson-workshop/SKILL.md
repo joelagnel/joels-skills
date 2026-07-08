@@ -303,6 +303,16 @@ After rendering, **open each PNG in an image viewer at phone-column width (~360p
 you read every label? Is text inside the box (not touching the border)? Is the SVG natural width
 under 2500 px? If any answer is "no", fix the source and re-render — don't ship.
 
+**Tall/narrow diagrams are auto-sized — don't fight the column.** A vertical stack of a few boxes
+(e.g. a layer stack, a backprop chain) is *portrait*: much taller than wide. Stretched to the full
+content column it looks absurd and its own text balloons. The HTML generators handle this for you:
+`embed_images()` reads each PNG's dimensions and, when height > 1.25× width, tags it
+`class="img-portrait"`, which the stylesheet caps at ~380 px wide and centers. So render such
+diagrams normally (`rsvg-convert -w 1500`) and let the generator shrink the *display* size — no
+manual width juggling. Wide diagrams (charts, most architectures) are untouched and still fill the
+column. When you screenshot to verify, confirm portrait diagrams render compact (not column-width)
+and their text stays legible at the cap.
+
 Diagrams should **explain the model**, not decorate. If a paragraph already conveys the idea, skip
 the diagram.
 
