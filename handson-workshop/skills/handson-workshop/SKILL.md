@@ -171,6 +171,17 @@ Copy `assets/workshop-template.md` to `WORKSHOP.md` and fill it in. Module struc
 Let the Phase 0 depth rubric drive the module count. Place all answer keys in a single section at
 the end.
 
+**Every captured block needs a frame: what produced it, and how to read it.** A raw log, table, or
+output dump dropped onto the page with only "(captured in `foo.log`)" makes the reader do your job.
+Around *every* capture give two things: (1) the **exact command or code** that produced it — so the
+number has a provenance the reader could rerun — and (2) a **read-it-with-me** sentence that walks
+the key figures, saying what each column/field means and which value matters. The citation proves
+the output is real; the frame is what makes it *teach*. (Real example: a bare
+`autograd=+0.8808   p-y=+0.8808` line meant nothing until the workshop showed the four lines of code
+that generated it and then read it aloud — "at `z=2` the model predicts `p=0.8808`, so for the true
+label `y=0` the formula gives `p−y=+0.8808`, and autograd computes exactly that.") The bar is: a
+reader should never meet a number without knowing where it came from and what it's telling them.
+
 **Introduce jargon before using it.** For jargon-heavy topics (systems internals, networking,
 databases, distributed systems), the first module after Prerequisites should be a **Module 0 —
 Vocabulary primer** that defines every load-bearing term in plain English in two or three sentences
@@ -214,6 +225,21 @@ maximum, *not* saturated. The real mechanism was scale-preservation across depth
 pre-activations is what surfaced the correct story.) When your mechanism claim depends on an
 internal quantity (a slope, a variance, a distribution, a rate), **print that quantity** and cite
 it like any other captured number.
+
+**Develop the intuition for a mechanism — don't just assert it.** When a step in your explanation
+rests on *how* or *why* something works (not merely *that* it does), build the reader up to it
+instead of stating it as a fact to memorize. Assert-it-cold writing — "the gradient is multiplied
+at each layer", "the WAL is fsync'd before the commit returns", "the lock is dropped before the
+callback fires" — leaves a beginner nodding without understanding. Earn the claim: give the
+plain-English reason, an analogy or a small worked example, and *then* the formal statement. Litmus
+test: for every "because" and every mechanism your argument leans on, ask *"could a reader who has
+never seen this reconstruct why — or are they taking my word for it?"* If the latter, add the
+build-up. (Real example from the batch-norm workshop: an early draft asserted "backprop multiplies
+the gradient by one factor per layer"; the fix developed *why* the signal travels backward and
+*why* the chain rule makes it a product — a relay of per-layer "conversion rates" with a
+`0.2 × 0.1 = 0.02` worked example — *before* leaning on that fact.) This is the twin of the
+load-bearing-objects rule above: that one says show the *property*; this one says show the
+*reasoning* that uses it.
 
 ### 4. Add diagrams
 
