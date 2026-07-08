@@ -175,6 +175,8 @@ def render_page(page, idx, pages, content_dir, out_dir, title,
 
     h1 = soup.find("h1")
     page_title = h1.get_text(strip=True) if h1 else page.get("nav", title)
+    # Avoid "Title — Title" on the landing page, where the h1 equals the site title.
+    doc_title = page_title if page_title == title else f"{page_title} — {title}"
     content_html = str(soup) + "\n" + build_page_nav(pages, idx)
 
     html = f"""<!DOCTYPE html>
@@ -183,7 +185,7 @@ def render_page(page, idx, pages, content_dir, out_dir, title,
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
-<title>{page_title} — {title}</title>
+<title>{doc_title}</title>
 <style>
 {pico_css}
 
