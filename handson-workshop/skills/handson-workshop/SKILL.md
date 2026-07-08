@@ -156,6 +156,18 @@ Three signals that you owe the reader a Module 0:
 If any of those is true, write Module 0. If none are (e.g., the audience is the team that built the
 system), Module 0 is optional.
 
+**Explain the load-bearing objects, not just name them.** Naming a term (in Module 0 or inline) is
+not the same as explaining how it *works*. If your argument's logic depends on how something
+*behaves* — an activation's derivative, a loss's gradient, a normalizer's effect, a data structure's
+invariant, a protocol's timing — then that behavior must be on the page **where it is first used**,
+even for advanced audiences and even if the object is "basic." Litmus test: for every function,
+operator, or component your explanation reasons about, ask *"does the reader need a specific property
+of this to follow my point?"* If yes, show that property (measured, like everything else, where you
+can). The classic failure is stating a conclusion — e.g. "gradients vanish because the sigmoid's
+slope is ≤ 0.25" — while never showing what the sigmoid is or why its slope is ≤ 0.25, leaving the
+reader to take the mechanism on faith. The audience level changes how *much* background to give,
+never *whether* the load-bearing property itself appears.
+
 ### 4. Add diagrams
 
 Use the companion **handson-diagrams** skill (installed alongside this one) for diagram guidance.
