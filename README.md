@@ -23,7 +23,7 @@ bundles two skills:
 
 | Skill | What it does |
 |-------|--------------|
-| **handson-workshop** | Interviews you to gauge audience level and depth, explores your machine to make the experiments reproducible (offering to install missing tools with your approval), and — if the topic is too big — suggests a smaller starter workshop plus a follow-on series. Then generates `WORKSHOP.md`, a styled self-contained `WORKSHOP.html` (sidebar ToC, collapsible answer keys, syntax highlighting), and a standalone `exam.html` with 15–20 auto-graded questions (1–100 score, 70 to pass). |
+| **handson-workshop** | Interviews you to gauge audience level and depth, explores your machine to make the experiments reproducible (offering to install missing tools with your approval), and — if the topic is too big — suggests a smaller starter workshop plus a follow-on series. Then generates `WORKSHOP.md`, a styled self-contained `WORKSHOP.html` (sidebar ToC, collapsible answer keys, syntax highlighting), and a standalone `exam.html` with 15–20 auto-graded questions (1–100 score, 70 to pass). For large workshops it can instead emit a multi-page **wiki** — a landing page plus one page per module, with a persistent cross-page sidebar and prev/next navigation. |
 | **handson-diagrams** | Companion diagramming guidance: **D2** (ELK layout) for architecture diagrams, non-Unicode **ASCII** for plain-text docs, **Mermaid** as a fallback, and **Python** charts (Bokeh / Matplotlib / Folium / Graphviz) for data. |
 
 Workshops are grounded in **real captured command output**, not invented examples.
@@ -114,7 +114,9 @@ bash handson-workshop/skills/handson-workshop/assets/serve-workshop.sh git-inter
    needs; surface gaps and, with your approval, install what's missing so experiments are real.
 3. **Research & capture** — run commands, save real output.
 4. **Author** — write modules (goal, setup, commands, captured output, a diagram, a quiz), then
-   generate the styled HTML and the auto-graded exam.
+   generate the styled HTML and the auto-graded exam. Short/medium topics become one scrolling
+   `WORKSHOP.html`; large ones become a multi-page wiki (`index.html` + one page per module) via
+   `wiki-generator.py`.
 
 ## License
 
