@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-workshop-html-generator.py — Render WORKSHOP.md → styled, self-contained WORKSHOP.html
+workshop-html-generator.py, Render WORKSHOP.md → styled, self-contained WORKSHOP.html
 
 Features:
   - Sticky sidebar table of contents with JS scroll-position highlighting
@@ -51,7 +51,7 @@ from pygments.styles import get_style_by_name
 PICO_CSS_PATH = Path(__file__).parent / 'pico.classless.min.css'
 
 
-# Custom palette overrides (Pico's CSS variables) — keep colors close to the
+# Custom palette overrides (Pico's CSS variables), keep colors close to the
 # old hand-rolled theme. Pico exposes ~80 vars; we only override the ones that
 # matter for our visual identity.
 PICO_OVERRIDES = """
@@ -85,7 +85,7 @@ PICO_OVERRIDES = """
   --pico-h4-color:                      #1e293b;
   --pico-muted-color:                   #475569;
 
-  /* Fluid typography — scales smoothly across viewports without breakpoints.
+  /* Fluid typography: scales smoothly across viewports without breakpoints.
      ~17 px on phones, up to ~19 px on wide displays. */
   --pico-font-size:                     clamp(1rem, 0.92rem + 0.4vw, 1.1875rem);
   --pico-line-height:                   1.65;
@@ -135,7 +135,7 @@ PICO_OVERRIDES = """
     --pico-primary-hover:               #93c5fd;
 
     --bg:              #0b1220;       /* almost-black navy, less harsh than pure black */
-    --surface:         #131c2e;       /* card surface — lighter than body for separation */
+    --surface:         #131c2e;       /* card surface, lighter than body for separation */
     --sidebar-bg:      #0d1422;       /* slightly darker than body */
     --sidebar-text:    #94a3b8;
     --sidebar-head:    #cbd5e1;
@@ -214,7 +214,7 @@ html {
 
 /* Defence in depth: prevent any wide child from triggering iOS Safari's
    "scale-to-fit-page" behavior (the symptom: body text appears tiny).
-   Use `clip` instead of `hidden` — `overflow-x: hidden` on <body> breaks
+   Use `clip` instead of `hidden`; `overflow-x: hidden` on <body> breaks
    scroll-to-anchor on iOS Safari (clicking a TOC link does nothing).
    `clip` clips overflow without establishing a scroll container, which
    leaves the document's natural scroll/anchor behavior intact. */
@@ -438,7 +438,7 @@ main.content-wrap tbody tr:hover td { background: var(--table-row-hover); }
   border-bottom: 1px solid rgba(255,255,255,.08);
   margin-bottom: .75rem;
 }
-/* Pico styles <nav> as a horizontal flex row of links — undo that for the
+/* Pico styles <nav> as a horizontal flex row of links; undo that for the
    sidebar so headings stack vertically. */
 #sidebar nav {
   display: block;
@@ -534,7 +534,7 @@ main.content-wrap img {
 }
 
 /* Tall/narrow diagrams (e.g. a vertical stack of a few boxes) look absurd blown
-   up to the full column — the text inside inflates with them. Cap their display
+   up to the full column; the text inside inflates with them. Cap their display
    width and keep them centered. Tagged automatically by aspect ratio in
    embed_images(). The qualified selector outranks the rule above. */
 main.content-wrap img.img-portrait {
@@ -682,7 +682,7 @@ details.answer-key-section[open] > summary::before { transform: rotate(90deg); }
   transition: background .15s, transform .1s;
 }
 .exam-cta a:hover { background: #1d4ed8; transform: translateY(-1px); }
-/* Inside .meta-block, links are inline within prose — render as text links, not buttons. */
+/* Inside .meta-block, links are inline within prose; render as text links, not buttons. */
 .meta-block .exam-cta { text-align: left; margin: 0; }
 .meta-block .exam-cta a {
   display: inline;
@@ -785,7 +785,7 @@ SIDEBAR_JS = r"""
   //      user taps a TOC link, the click handler removes that lock and the
   //      browser then tries to do its native anchor-scroll. iOS Safari
   //      INTERMITTENTLY misfires this (the scroll target is computed against
-  //      the locked-state document) — symptom: only some anchors land in the
+  //      the locked-state document); symptom: only some anchors land in the
   //      right place.
   //   2. If a target is inside a collapsed <details> (answer-key sections),
   //      we must open it BEFORE scrolling, otherwise the bounding rect is
@@ -962,7 +962,7 @@ def render_math_prepare(md_text):
         import latex2mathml.converter  # noqa: F401
     except ImportError:
         if '$$' in md_text or r'\(' in md_text:
-            print('WARNING: latex2mathml not installed — LaTeX math left as '
+            print('WARNING: latex2mathml not installed, LaTeX math left as '
                   'plain text. Fix: pip install latex2mathml')
         return md_text, []
 
@@ -1045,7 +1045,7 @@ def ensure_heading_ids(soup):
 
 
 def _png_dimensions(data):
-    """Return (width, height) for PNG bytes, or None. Reads the IHDR chunk —
+    """Return (width, height) for PNG bytes, or None. Reads the IHDR chunk -
     no PIL dependency."""
     if len(data) >= 24 and data[:8] == b'\x89PNG\r\n\x1a\n' and data[12:16] == b'IHDR':
         return (int.from_bytes(data[16:20], 'big'),
@@ -1207,7 +1207,7 @@ def get_pygments_css():
 def load_pico_css():
     """Load Pico.css classless from disk; warn if missing."""
     if not PICO_CSS_PATH.exists():
-        print(f'WARNING: {PICO_CSS_PATH} missing — falling back to overrides only.',
+        print(f'WARNING: {PICO_CSS_PATH} missing, falling back to overrides only.',
               file=sys.stderr)
         return ''
     return PICO_CSS_PATH.read_text(encoding='utf-8')

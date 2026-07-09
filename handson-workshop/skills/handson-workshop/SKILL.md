@@ -193,11 +193,13 @@ to its source-listing page, see the wiki notes), its section marker, and the log
 weave that provenance into the sentence that *introduces* the capture, rather than a mechanical
 parenthetical trailing it. "(Captured in `captures/results.log` lines 14–15.)" after the block
 reads as random; "(Measured by the [S3] pass; log lines 25 and 29.)" is traceable but still
-reads as bureaucracy. The narrative form teaches: "When the [S3] pass — the section of
-[`experiment.py`](experiment-source.html) that constructs the networks and inspects their
-starting state — runs, these are the statistics obtained (`captures/results.log` lines 25
-and 29):" followed by the output block. Name the pass, gloss what it does in one clause, give
-the log lines, then show the capture.
+reads as bureaucracy. The narrative form teaches: "When [Section 3's pass of the experiment
+script](experiment-source.html) runs (it is the part that constructs the networks and inspects
+their starting state), these are the statistics obtained (`captures/results.log` lines 25 and
+29):" followed by the output block. Name the pass, gloss what it does in one clause, give the
+log lines, then show the capture. And spell section markers out as readable phrases ("Section
+3's pass of the experiment script", hyperlinked to the source page) — prose must never make the
+reader decode bracket codes like "[S3]"; the bracket markers live only in the code and the log.
 
 **Quoted snippets are verbatim, or explicitly abridged — never paraphrased.** Readers copy
 snippets and diff them against the source, so every code fence must match the script
@@ -502,12 +504,14 @@ Notes specific to the wiki shape:
 - Same dependencies (`markdown`, `beautifulsoup4`, `pygments`, `latex2mathml` for math). Re-run
   after any content change.
 - **Never hyperlink raw non-HTML files** (the experiment script, log files) from wiki pages —
-  static hosts and portals frequently 404 them. Instead render the experiment script as its own
-  wiki page: a markdown file holding a one-paragraph frame (run command, determinism note) and
-  one fenced code block with the full script, listed in `wiki.json` (nav e.g.
-  "Source · experiment.py"), and link *that* page everywhere — including from every capture
-  citation (see "Cite the producer" in step 3). Keep it regenerable: a tiny helper that rewrites
-  the markdown from the script beats hand-copying, which drifts.
+  static hosts and portals frequently 404 them. Instead render BOTH artifacts as wiki pages:
+  the experiment script (a one-paragraph frame with the run command and determinism note, then
+  one fenced block with the full script; nav e.g. "Source · experiment.py") and the captured
+  log (nav e.g. "Log · results.log") with **line numbers prefixed** so the modules' "lines
+  25 and 29" citations can be looked up directly. Link every prose mention of either artifact
+  to its page — a line-number citation with no browsable target reads as random. Keep both
+  regenerable: a tiny helper that rewrites the markdown from the real files beats
+  hand-copying, which drifts.
 - `index.md` is read first: it must pass the overview-vocabulary rule from step 3 — punchlines
   phrased as outcomes, no reliance on terms the modules will introduce.
 
@@ -606,4 +610,7 @@ Two shapes work well; pick per the Phase 0 style answer:
 - **Don't preview mechanisms in vocabulary the reader doesn't have yet.** The overview and all
   forward references tease outcomes in plain language; the module that introduces a concept owns
   its vocabulary.
-- **Don't use emoji** in WORKSHOP.md or exam.html.
+- **Don't use emoji or em-dashes** in workshop content (WORKSHOP.md, wiki pages, exam.html).
+  Em-dashes read as mannered filler at scale — rewrite with commas, colons, parentheses,
+  semicolons, or shorter sentences. En-dashes in numeric ranges ("lines 14–15") are fine.
+  This includes generated chrome: page-title separators, exam headings, score strings.

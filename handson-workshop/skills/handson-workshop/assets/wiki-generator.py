@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-wiki-generator.py — Render a multi-page "wiki" workshop from per-page markdown.
+wiki-generator.py, Render a multi-page "wiki" workshop from per-page markdown.
 
 Unlike workshop-html-generator.py (which renders ONE self-contained WORKSHOP.html
-with an in-page table-of-contents sidebar), this renders a SET of pages — an
-Overview/landing page plus one page per module — that link to each other, with a
+with an in-page table-of-contents sidebar), this renders a SET of pages, an
+Overview/landing page plus one page per module, that link to each other, with a
 persistent left sidebar listing every page (the current one highlighted, its
 in-page sections nested beneath it) and prev/next navigation at the foot of each
 page. Use this when a workshop is large enough that one scroll is unwieldy and you
@@ -177,8 +177,8 @@ def render_page(page, idx, pages, content_dir, out_dir, title,
 
     h1 = soup.find("h1")
     page_title = h1.get_text(strip=True) if h1 else page.get("nav", title)
-    # Avoid "Title — Title" on the landing page, where the h1 equals the site title.
-    doc_title = page_title if page_title == title else f"{page_title} — {title}"
+    # Avoid "Title, Title" on the landing page, where the h1 equals the site title.
+    doc_title = page_title if page_title == title else f"{page_title} - {title}"
     content_html = str(soup) + "\n" + build_page_nav(pages, idx)
 
     html = f"""<!DOCTYPE html>
@@ -245,7 +245,7 @@ def main():
 
     for idx, page in enumerate(pages):
         if page.get("external"):
-            continue  # e.g. a prebuilt exam.html — only appears in nav
+            continue  # e.g. a prebuilt exam.html, only appears in nav
         render_page(page, idx, pages, content_dir, out_dir, title,
                     pico_css, pygments_css)
 
