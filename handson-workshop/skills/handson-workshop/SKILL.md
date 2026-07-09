@@ -182,6 +182,14 @@ that generated it and then read it aloud — "at `z=2` the model predicts `p=0.8
 label `y=0` the formula gives `p−y=+0.8808`, and autograd computes exactly that.") The bar is: a
 reader should never meet a number without knowing where it came from and what it's telling them.
 
+**Cite the producer, not just the artifact.** The citation parenthetical itself must name the
+run that produced the artifact — the script (linked to its source-listing page, see the wiki
+notes) and, if the script has section markers, the section — not only the artifact file.
+"(Captured in `captures/results.log` lines 14–15.)" reads as random to someone who doesn't know
+what wrote that log; "(Measured by the [S2] pass of [`experiment.py`](experiment-source.html);
+log: `captures/results.log` lines 14–15.)" tells them what ran, where to read the code, and
+where the raw output lives — without leaving the page.
+
 **Introduce jargon before using it.** For jargon-heavy topics (systems internals, networking,
 databases, distributed systems), the first module after Prerequisites should be a **Module 0 —
 Vocabulary primer** that defines every load-bearing term in plain English in two or three sentences
@@ -200,6 +208,32 @@ Three signals that you owe the reader a Module 0:
 
 If any of those is true, write Module 0. If none are (e.g., the audience is the team that built the
 system), Module 0 is optional.
+
+**The overview — and every forward reference — speaks only the reader's starting vocabulary.**
+The landing/overview page (single-page: everything before Module 0; wiki: `index.md`) is read
+before anything has been taught, so it must be fully understandable with nothing but the
+prerequisites from Phase 0. The same goes for forward references anywhere ("as Module 5 will
+show…"), for module-opening "Goal" lines, and for takeaway/summary bullets that preview a later
+module's finding. The jargon rule above has a blind spot here: the overview *wants* to preview
+the punchline, and the punchline usually involves concepts only a later module introduces. The
+fix is not to define those concepts on the landing page (that bloats it) — it is to **phrase
+previews as outcomes, not mechanisms**: tease *what the reader will find*, in plain words, and
+leave the *vocabulary of how* to the module that teaches it.
+
+Wrong (real example, from an overview page): "the standard explanation for why batch norm helps
+('it keeps the sigmoid out of its saturated region') is measurably wrong for this network" —
+the reader doesn't yet know what batch norm computes, what saturation means, or that a standard
+explanation exists. Right: "along the way you'll test the most common textbook explanation for
+*why* the fix works — and find, by direct measurement, that it's wrong for this very network."
+A second real example, from an early module's takeaway bullets: "every trip through a sigmoid
+*multiplies* a gradient by at most 0.25" — asserted before anything explained why backprop is
+multiplicative. Either add the two-sentence build-up (rates chain by multiplying) right there,
+or phrase the takeaway without the unearned mechanism.
+
+Litmus test: reread the overview and each module's opening and closing lines pretending you know
+only the stated prerequisites plus what earlier pages taught. Any clause that would make that
+reader ask "what's that?" or "why would it work that way?" gets a build-up, a rephrase to its
+outcome, or the axe. Run this as an explicit audit pass after drafting, not as a hope.
 
 **Explain the load-bearing objects, not just name them.** Naming a term (in Module 0 or inline) is
 not the same as explaining how it *works*. If your argument's logic depends on how something
@@ -355,7 +389,8 @@ python3 <skill-dir>/assets/workshop-html-generator.py WORKSHOP.md
 ```
 
 Requires Python 3 with `markdown`, `beautifulsoup4`, and `pygments`
-(`pip install markdown beautifulsoup4 pygments`). It produces a self-contained `WORKSHOP.html`
+(`pip install markdown beautifulsoup4 pygments`), plus `latex2mathml` if the workshop contains
+math (`pip install latex2mathml`). It produces a self-contained `WORKSHOP.html`
 beside the markdown file with:
 
 - **Sticky sidebar** ToC with JS scroll-position highlighting (h2 + h3 headings)
@@ -363,6 +398,15 @@ beside the markdown file with:
 - **Answer key sections** wrapped in collapsible `<details>` (click to reveal)
 - **Syntax-highlighted code** via Pygments github-dark theme
 - **Diagram PNGs/SVGs** embedded as base64 (fully self-contained, no external deps)
+- **LaTeX math** — write display math as `$$...$$` and inline math as `\(...\)` in the markdown;
+  the generator renders both to native MathML (no JS, no fonts, still fully self-contained).
+  Bare single-dollar `$...$` is deliberately NOT supported (false positives on prices). Math
+  inside code fences/spans is left alone. If `latex2mathml` is missing the source text passes
+  through unchanged with a warning.
+- **Copy-code buttons** — every code block gets a copy icon (async clipboard API on secure
+  contexts, hidden-textarea fallback for plain-HTTP hosting). Anything a reader might want to
+  paste — commands, snippets, the experiment script — should therefore live in a fenced code
+  block, not in prose.
 - **Responsive** — sidebar collapses to a hamburger menu on narrow viewports
 
 Re-run this command any time WORKSHOP.md changes. The generator is idempotent.
@@ -409,7 +453,17 @@ Notes specific to the wiki shape:
 - The exam is a prebuilt `exam.html`; list it as an `"external": true` page so it appears in the
   sidebar without the generator trying to render it. Point the exam's answer-explanation links at
   the module pages (`module-N.html`), not a `WORKSHOP.html`.
-- Same dependencies (`markdown`, `beautifulsoup4`, `pygments`). Re-run after any content change.
+- Same dependencies (`markdown`, `beautifulsoup4`, `pygments`, `latex2mathml` for math). Re-run
+  after any content change.
+- **Never hyperlink raw non-HTML files** (the experiment script, log files) from wiki pages —
+  static hosts and portals frequently 404 them. Instead render the experiment script as its own
+  wiki page: a markdown file holding a one-paragraph frame (run command, determinism note) and
+  one fenced code block with the full script, listed in `wiki.json` (nav e.g.
+  "Source · experiment.py"), and link *that* page everywhere — including from every capture
+  citation (see "Cite the producer" in step 3). Keep it regenerable: a tiny helper that rewrites
+  the markdown from the script beats hand-copying, which drifts.
+- `index.md` is read first: it must pass the overview-vocabulary rule from step 3 — punchlines
+  phrased as outcomes, no reliance on terms the modules will introduce.
 
 ### 6. Build exam.html
 
@@ -472,6 +526,8 @@ If you keep your workshops in a git repo, commit the `<slug>/` directory like an
 | Depth | Matched to the audience level from the interview | One-size-fits-all regardless of audience |
 | Prerequisites | Confirmed installed (or gaps surfaced) before drafting | Commands the author can't actually run |
 | Commands | Real captured output, cited to a file | Invented / handwave output |
+| Captures | Citation names the producing script + section | "(captured in foo.log)" with no producer |
+| Overview / previews | Outcomes in the reader's starting vocabulary | Leans on concepts a later module introduces |
 | Diagrams | Explain the mental model | Decorate; restate the prose |
 | Quizzes | Test reasoning | Test trivia / surface recall |
 | Exam | Cover every module | Lopsided to one topic |
@@ -501,4 +557,7 @@ Two shapes work well; pick per the Phase 0 style answer:
   a reader who *understood* should get them right.
 - **Don't create a workshop without a reproducibility section** when experiments depend on specific
   software versions, hardware, or setup — future readers will not remember.
+- **Don't preview mechanisms in vocabulary the reader doesn't have yet.** The overview and all
+  forward references tease outcomes in plain language; the module that introduces a concept owns
+  its vocabulary.
 - **Don't use emoji** in WORKSHOP.md or exam.html.
