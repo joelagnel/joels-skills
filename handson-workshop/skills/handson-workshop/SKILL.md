@@ -187,13 +187,17 @@ output block none of the shown lines print, still reads as out-of-the-blue (real
 two-moons *generation* snippet followed by a `samples: 1000 / split: 800/200` capture — the fix
 was showing the three `log(...)` lines that write those stats).
 
-**Cite the producer, not just the artifact.** The citation parenthetical itself must name the
-run that produced the artifact — the script (linked to its source-listing page, see the wiki
-notes) and, if the script has section markers, the section — not only the artifact file.
-"(Captured in `captures/results.log` lines 14–15.)" reads as random to someone who doesn't know
-what wrote that log; "(Measured by the [S2] pass of [`experiment.py`](experiment-source.html);
-log: `captures/results.log` lines 14–15.)" tells them what ran, where to read the code, and
-where the raw output lives — without leaving the page.
+**Cite the producer, not just the artifact — and do it as narrative, not a bracketed
+afterthought.** Every capture must be traceable to the run that produced it: the script (linked
+to its source-listing page, see the wiki notes), its section marker, and the log lines. But
+weave that provenance into the sentence that *introduces* the capture, rather than a mechanical
+parenthetical trailing it. "(Captured in `captures/results.log` lines 14–15.)" after the block
+reads as random; "(Measured by the [S3] pass; log lines 25 and 29.)" is traceable but still
+reads as bureaucracy. The narrative form teaches: "When the [S3] pass — the section of
+[`experiment.py`](experiment-source.html) that constructs the networks and inspects their
+starting state — runs, these are the statistics obtained (`captures/results.log` lines 25
+and 29):" followed by the output block. Name the pass, gloss what it does in one clause, give
+the log lines, then show the capture.
 
 **Quoted snippets are verbatim, or explicitly abridged — never paraphrased.** Readers copy
 snippets and diff them against the source, so every code fence must match the script
