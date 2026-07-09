@@ -156,6 +156,7 @@ def build_page_nav(pages, idx):
 def render_page(page, idx, pages, content_dir, out_dir, title,
                 pico_css, pygments_css):
     md_text = (content_dir / page["file"]).read_text(encoding="utf-8")
+    md_text, math_stash = whg.render_math_prepare(md_text)
     md_engine = markdown.Markdown(
         extensions=["extra", "codehilite"],
         extension_configs={"codehilite": {
@@ -163,6 +164,7 @@ def render_page(page, idx, pages, content_dir, out_dir, title,
     )
     soup = BeautifulSoup(md_engine.convert(md_text), "html.parser")
 
+    whg.render_math_inject(soup, math_stash)
     whg.ensure_heading_ids(soup)
     sidebar_html = build_wiki_sidebar(pages, page["slug"], soup, title)
 

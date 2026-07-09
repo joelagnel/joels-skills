@@ -705,6 +705,45 @@ details.answer-key-section[open] > summary::before { transform: rotate(90deg); }
   #main { margin-left: 0; }
   main.content-wrap { box-shadow: none; padding: 0; }
 }
+
+/* ── MathML (rendered from LaTeX by latex2mathml) ───────────────────────── */
+
+math[display="block"] {
+  display: block;
+  margin: 1.1rem auto;
+  font-size: 1.18em;
+  text-align: center;
+}
+math { font-family: "STIX Two Math", "Latin Modern Math", "Cambria Math", serif; }
+
+/* ── Copy-code buttons ──────────────────────────────────────────────────── */
+
+main pre { position: relative; }
+.code-copy-btn {
+  position: absolute;
+  top: .4rem;
+  right: .4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .08);
+  color: #c9d1d9;
+  cursor: pointer;
+  opacity: .55;
+  transition: opacity .15s, background .15s;
+  box-shadow: none;
+}
+.code-copy-btn:hover { opacity: 1; background: rgba(255, 255, 255, .18); }
+.code-copy-btn svg { width: 1rem; height: 1rem; display: block; }
+.code-copy-btn.copied { color: #4ade80; border-color: #4ade80; opacity: 1; }
+@media (max-width: 860px) { .code-copy-btn { opacity: .8; } }
+@media print { .code-copy-btn { display: none !important; } }
 """
 
 # ── Sidebar scroll-highlight JS ──────────────────────────────────────────────
@@ -834,10 +873,150 @@ SIDEBAR_JS = r"""
     });
   }
 })();
+
+/* ── Copy-code buttons ─────────────────────────────────────────────────────
+   Adds a copy icon to every <pre> block. Uses the async clipboard API on
+   secure contexts and a hidden-textarea fallback elsewhere (the common case
+   for plain-HTTP LAN/tailscale hosting). */
+(function () {
+  var COPY_SVG =
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">' +
+    '<rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/>' +
+    '<path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1"/></svg>';
+  var CHECK_SVG =
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">' +
+    '<path d="M2.5 8.5l3.5 3.5 7-8"/></svg>';
+
+  function copyText(text, done) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+    } else {
+      fallback(text, done);
+    }
+  }
+  function fallback(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    done();
+  }
+
+  document.querySelectorAll('main pre').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.className = 'code-copy-btn';
+    btn.type = 'button';
+    btn.title = 'Copy code';
+    btn.setAttribute('aria-label', 'Copy code');
+    btn.innerHTML = COPY_SVG;
+    btn.addEventListener('click', function () {
+      var clone = pre.cloneNode(true);
+      var b = clone.querySelector('.code-copy-btn');
+      if (b) b.remove();
+      copyText(clone.innerText.replace(/\n+$/, '\n'), function () {
+        btn.classList.add('copied');
+        btn.innerHTML = CHECK_SVG;
+        setTimeout(function () {
+          btn.classList.remove('copied');
+          btn.innerHTML = COPY_SVG;
+        }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+})();
 """
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
+
+# LaTeX math support: $$...$$ (display) and \(...\) (inline) are extracted from
+# the raw markdown BEFORE the markdown engine runs (markdown would mangle
+# backslash escapes like \( and \! and may treat _ as emphasis), replaced with
+# placeholder tokens, then injected back into the soup as native MathML via
+# latex2mathml. Bare $...$ is deliberately unsupported (false positives on
+# prices). Fenced code blocks and inline code spans are left untouched.
+
+_MATH_TOKEN = '%%MATHML{}%%'
+_MATH_TOKEN_RE = re.compile(r'%%MATHML(\d+)%%')
+_MATH_SPAN_RE = re.compile(r'\$\$(.+?)\$\$|\\\((.+?)\\\)', re.DOTALL)
+_FENCE_RE = re.compile(r'(?ms)^(?P<f>```|~~~)[^\n]*\n.*?^(?P=f)[ \t]*$')
+_INLINE_CODE_RE = re.compile(r'`[^`\n]+`')
+
+
+def render_math_prepare(md_text):
+    """Replace LaTeX math spans (outside code) with placeholder tokens.
+
+    Returns (new_md_text, stash) where stash is a list of (latex, display)
+    tuples indexed by token number. If latex2mathml is unavailable, returns
+    the text unchanged with an empty stash (and warns if math is present).
+    """
+    try:
+        import latex2mathml.converter  # noqa: F401
+    except ImportError:
+        if '$$' in md_text or r'\(' in md_text:
+            print('WARNING: latex2mathml not installed — LaTeX math left as '
+                  'plain text. Fix: pip install latex2mathml')
+        return md_text, []
+
+    stash = []
+
+    def _extract(segment):
+        def repl(m):
+            latex = m.group(1) if m.group(1) is not None else m.group(2)
+            display = 'block' if m.group(1) is not None else 'inline'
+            stash.append((latex.strip(), display))
+            return _MATH_TOKEN.format(len(stash) - 1)
+        # protect inline code spans within this non-fenced segment
+        code_spans = []
+        def stash_code(m):
+            code_spans.append(m.group(0))
+            return '%%CODESPAN{}%%'.format(len(code_spans) - 1)
+        segment = _INLINE_CODE_RE.sub(stash_code, segment)
+        segment = _MATH_SPAN_RE.sub(repl, segment)
+        for i, span in enumerate(code_spans):
+            segment = segment.replace('%%CODESPAN{}%%'.format(i), span)
+        return segment
+
+    out, last = [], 0
+    for m in _FENCE_RE.finditer(md_text):
+        out.append(_extract(md_text[last:m.start()]))
+        out.append(m.group(0))          # fenced code: untouched
+        last = m.end()
+    out.append(_extract(md_text[last:]))
+    return ''.join(out), stash
+
+
+def render_math_inject(soup, stash):
+    """Replace placeholder tokens in text nodes with MathML elements."""
+    if not stash:
+        return
+    from latex2mathml.converter import convert as _l2m
+    for node in list(soup.find_all(string=_MATH_TOKEN_RE)):
+        s = str(node)
+        parts, last = [], 0
+        for m in _MATH_TOKEN_RE.finditer(s):
+            if m.start() > last:
+                parts.append(s[last:m.start()])
+            idx = int(m.group(1))
+            latex, display = stash[idx]
+            try:
+                mathml = _l2m(latex, display=display)
+                frag = BeautifulSoup(mathml, 'html.parser')
+                parts.extend(list(frag.contents))
+            except Exception as e:  # leave the raw LaTeX visible rather than dying
+                print(f'WARNING: latex2mathml failed on {latex[:60]!r}: {e}')
+                parts.append(('$$%s$$' if display == 'block' else r'\(%s\)') % latex)
+            last = m.end()
+        parts.append(s[last:])
+        for p in parts:
+            node.insert_before(p)
+        node.extract()
+
 
 def slugify(text):
     text = text.lower().strip()
@@ -1035,6 +1214,8 @@ def convert(md_path: Path, out_path: Path, embed_img: bool = True):
     md_text = md_path.read_text(encoding='utf-8')
     base_dir = md_path.parent
 
+    md_text, math_stash = render_math_prepare(md_text)
+
     md_engine = markdown.Markdown(
         extensions=['extra', 'codehilite'],
         extension_configs={
@@ -1049,6 +1230,7 @@ def convert(md_path: Path, out_path: Path, embed_img: bool = True):
 
     soup = BeautifulSoup(body_html, 'html.parser')
 
+    render_math_inject(soup, math_stash)
     ensure_heading_ids(soup)
 
     # Build sidebar BEFORE structural wrapping (all h3 ids still on h3 elements)

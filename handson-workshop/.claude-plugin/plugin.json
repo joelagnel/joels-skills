@@ -1,6 +1,6 @@
 {
   "name": "handson-workshop",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Author self-contained, auto-graded hands-on workshops for any technical topic. Interviews the user to tailor depth, explores the local system to make experiments reproducible, then generates WORKSHOP.md, a styled self-contained WORKSHOP.html, and a standalone auto-graded exam.html. Bundles a companion handson-diagrams skill (D2 / ASCII / Mermaid / Python charts).",
   "author": {
     "name": "Joel Fernandes"
