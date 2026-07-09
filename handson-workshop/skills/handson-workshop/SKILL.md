@@ -252,6 +252,15 @@ slope is ≤ 0.25" — while never showing what the sigmoid is or why its slope 
 reader to take the mechanism on faith. The audience level changes how *much* background to give,
 never *whether* the load-bearing property itself appears.
 
+A corollary: **a formula with a one-line gloss is still only naming.** BCE presented as
+`L = −[y ln p + (1−y)ln(1−p)]` plus "the negative log of the probability on the correct answer"
+was flagged by a real reader as "not really explained — a passing mention." Explaining a formula
+means walking why it has its shape: what need rules out the naive alternative (accuracy is a
+staircase with no slope to follow), what each piece does (the y and 1−y factors select the
+branch — say so explicitly), and worked values at the extremes (right = 0, shrug = ln 2,
+confidently wrong = unbounded). If the reader could not re-derive the formula's *purpose* after
+your paragraph, it was a mention, not an explanation.
+
 **Verify the mechanism by measurement — don't repeat the textbook story on faith.** The whole
 point of a grounded workshop is that you can *check* the causal claim, not just the numbers. Before
 you write "X happens because Y," measure Y in the same script that produces your other captures. It
