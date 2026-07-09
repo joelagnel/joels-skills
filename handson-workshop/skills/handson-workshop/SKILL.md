@@ -181,6 +181,11 @@ the output is real; the frame is what makes it *teach*. (Real example: a bare
 that generated it and then read it aloud — "at `z=2` the model predicts `p=0.8808`, so for the true
 label `y=0` the formula gives `p−y=+0.8808`, and autograd computes exactly that.") The bar is: a
 reader should never meet a number without knowing where it came from and what it's telling them.
+And "produced it" means the shown code **actually emits the output shown — including the
+print/log lines that write it**. A snippet that merely computes related values, followed by an
+output block none of the shown lines print, still reads as out-of-the-blue (real example: a
+two-moons *generation* snippet followed by a `samples: 1000 / split: 800/200` capture — the fix
+was showing the three `log(...)` lines that write those stats).
 
 **Cite the producer, not just the artifact.** The citation parenthetical itself must name the
 run that produced the artifact — the script (linked to its source-listing page, see the wiki
