@@ -244,8 +244,10 @@ main { padding-bottom: 5rem; }
 }
 
 main.content-wrap {
-  /* Pico's <main> already gets sensible padding/max-width. We add a card. */
-  max-width: 880px;
+  /* 880px readability floor at typical viewport widths; when the viewport is
+     wider in CSS px (a large monitor, or the page zoomed OUT), grow to use
+     the extra space instead of leaving dead margins around a fixed card. */
+  max-width: max(880px, calc(100vw - 1100px));
   margin: 0 auto;
   background: var(--surface);
   border-radius: 12px;
