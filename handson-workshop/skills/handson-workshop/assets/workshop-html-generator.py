@@ -244,10 +244,11 @@ main { padding-bottom: 5rem; }
 }
 
 main.content-wrap {
-  /* 880px readability floor at typical viewport widths; when the viewport is
-     wider in CSS px (a large monitor, or the page zoomed OUT), grow to use
-     the extra space instead of leaving dead margins around a fixed card. */
-  max-width: max(880px, calc(100vw - 1100px));
+  /* Fill the available space (96% of the column beside the sidebar), with a
+     880px floor for narrow viewports. Percentage-based so the card keeps
+     absorbing the extra room a zoomed-out page or wide monitor creates,
+     instead of shrinking inside fixed margins. */
+  max-width: max(880px, 96%);
   margin: 0 auto;
   background: var(--surface);
   border-radius: 12px;

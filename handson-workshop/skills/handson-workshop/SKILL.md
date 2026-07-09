@@ -195,6 +195,23 @@ what wrote that log; "(Measured by the [S2] pass of [`experiment.py`](experiment
 log: `captures/results.log` lines 14–15.)" tells them what ran, where to read the code, and
 where the raw output lives — without leaving the page.
 
+**Quoted snippets are verbatim, or explicitly abridged — never paraphrased.** Readers copy
+snippets and diff them against the source, so every code fence must match the script
+byte-for-byte as a *contiguous* region. Don't inline constants the real code keeps in
+variables, don't collapse two lines into one, and never drop `...` placeholders *inside* a
+fence. If lines must be omitted, split into two verbatim fences and put the elision in the
+prose between them, with the link to the full source-listing page alongside. Verify
+mechanically after drafting: check that each `python` fence matches a contiguous slice of the
+script (a ten-line checker beats eyeballing; real audits caught both a paraphrased line that
+never existed in the script and a fence missing one interior line).
+
+**The experiment script is reader-facing — comment it like a teaching artifact.** It gets
+rendered as the Source page and copied by readers, so a banner comment per section is not
+enough: give the module a docstring, every function a docstring, and intersperse why-comments
+at the non-obvious lines (what a flag exists for, why a seed is re-set, which module a branch
+serves). Since quoted snippets must stay verbatim, write the comments *before* quoting — and
+re-run the script afterward to prove the captured log is byte-identical.
+
 **Introduce jargon before using it.** For jargon-heavy topics (systems internals, networking,
 databases, distributed systems), the first module after Prerequisites should be a **Module 0 —
 Vocabulary primer** that defines every load-bearing term in plain English in two or three sentences
