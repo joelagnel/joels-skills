@@ -208,9 +208,20 @@ never existed in the script and a fence missing one interior line).
 **The experiment script is reader-facing — comment it like a teaching artifact.** It gets
 rendered as the Source page and copied by readers, so a banner comment per section is not
 enough: give the module a docstring, every function a docstring, and intersperse why-comments
-at the non-obvious lines (what a flag exists for, why a seed is re-set, which module a branch
-serves). Since quoted snippets must stay verbatim, write the comments *before* quoting — and
-re-run the script afterward to prove the captured log is byte-identical.
+throughout the body in the **annotated-walkthrough style** — a standalone comment line above
+each logical step, with a blank line between steps — rather than sparse trailing comments:
+
+```python
+        # Set the manual seed so that different configurations (norm/act/...)
+        # start with the exact same weight values, for a fair comparison.
+        torch.manual_seed(SEED)
+
+        # Dimensions: input (2 features) -> depth hidden layers -> output.
+        dims = [2] + [WIDTH] * depth
+```
+
+Since quoted snippets must stay verbatim, write the comments *before* quoting — and re-run the
+script afterward to prove the captured log is byte-identical.
 
 **Introduce jargon before using it.** For jargon-heavy topics (systems internals, networking,
 databases, distributed systems), the first module after Prerequisites should be a **Module 0 —
