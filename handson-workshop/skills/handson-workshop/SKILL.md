@@ -104,24 +104,25 @@ the concept load: roughly how many modules the topic needs and whether it spans 
 subsystems. If it clearly exceeds one sitting (guidance: **> ~6–8 modules, or plainly
 multi-domain**), stop and **propose narrowing**:
 
-- Recommend a smaller, foundational **"Workshop 1"** to build now, and
-- Sketch a **follow-on series roadmap** (Workshop 2, 3, …) for the rest.
+- Recommend slicing it into a foundational **"Workshop 1"** plus focused follow-ons
+  (Workshop 2, 3, …), each sized to one sitting, and
+- Present the **series plan**: each workshop's slice and what it assumes from the earlier ones.
 
-Let the user accept the narrowed scope, pick a different starting slice, or explicitly override
-and proceed full-size. Producing one bloated workshop is a failure mode — a focused starter plus a
-roadmap is almost always the better outcome.
+Let the user accept the series plan, pick a different slicing, trim to just Workshop 1, or
+explicitly override and proceed as one full-size workshop. Producing one bloated workshop is a
+failure mode — a series of focused ones is almost always the better outcome.
 
-**One invocation builds one workshop.** When the user accepts the narrowed scope, this run
-produces Workshop 1 only; the follow-on workshops are NOT built in the same run. Each is built
-later by re-invoking this skill with its slice as the topic (e.g.
-`/handson-workshop "X internals: <workshop 2 slice>"`), landing in its own sibling `<slug>/`
-directory. The roadmap itself is therefore a deliverable, not just talk: record it in Workshop
-1's landing page as a short "Where this series goes next" section that lists each planned
-workshop, its slice, and what it assumes the reader learned from the earlier ones, so a future
-invocation can pick up any slice without re-deriving the plan. When building a later workshop in
-the series, read that roadmap first and cross-link back ("builds on Workshop 1's ..."). An
-explicit full-size override also stays a single workshop in this one invocation (usually the
-multi-page wiki shape); it never fans out into several workshops in one run.
+**One invocation builds the whole series.** When the user accepts the series plan, do not defer
+the follow-ons to future runs: this same invocation builds every workshop in the series. Run
+Phase 0 once, up front, for all of them (one interview covers audience, depth, shape, and the
+slicing approval; do not re-interview per workshop), and run Phase 1 once against the union of
+tooling the whole series needs. Then build the workshops in dependency order, Workshop 1 first,
+each into its own sibling `<slug>/` directory with its own modules, captures, and exam. Wire
+the series together: each landing page carries a short series section listing every installment
+with links, plus explicit predecessor/successor pointers ("builds on Workshop 1's ..."). Later
+workshops assume the reader finished the earlier ones, so their vocabulary primers stay lean and
+reference back instead of re-teaching. The full-size override is the one case that stays a
+single workshop (usually the multi-page wiki shape).
 
 ### Phase 1 — Systems exploration & prerequisites
 
