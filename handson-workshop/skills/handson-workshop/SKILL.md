@@ -192,7 +192,7 @@ the end.
 **Every captured block needs a frame: what produced it, and how to read it.** A raw log, table, or
 output dump dropped onto the page with only "(captured in `foo.log`)" makes the reader do your job.
 Around *every* capture give two things: (1) the **exact command or code** that produced it — so the
-number has a provenance the reader could rerun — and (2) a **read-it-with-me** sentence that walks
+number has a provenance the reader could rerun — and (2) a **"let's go deeper"** sentence that walks
 the key figures, saying what each column/field means and which value matters. The citation proves
 the output is real; the frame is what makes it *teach*. (Real example: a bare
 `autograd=+0.8808   p-y=+0.8808` line meant nothing until the workshop showed the four lines of code
