@@ -233,8 +233,10 @@ script](experiment-source.html) runs (it is the part that constructs the network
 their starting state), these are the statistics obtained (`captures/results.log` lines 25 and
 29):" followed by the output block. Name the pass, gloss what it does in one clause, give the
 log lines, then show the capture. And spell section markers out as readable phrases ("Section
-3's pass of the experiment script", hyperlinked to the source page) — prose must never make the
-reader decode bracket codes like "[S3]"; the bracket markers live only in the code and the log.
+3's pass of the experiment script", hyperlinked to the source page). Prose must never make the
+reader decode a bracket code like "[S3]" cold: use one only after the module itself has clearly
+defined what it means, and if the definition lives elsewhere (another module, the source page,
+the log), hyperlink the code to that definition with a brief gloss inline.
 
 **Quoted snippets are verbatim, or explicitly abridged — never paraphrased.** Readers copy
 snippets and diff them against the source, so every code fence must match the script
