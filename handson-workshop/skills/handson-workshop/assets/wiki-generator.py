@@ -124,6 +124,8 @@ def build_wiki_sidebar(pages, current_slug, soup, title):
                 text = h2.get_text(strip=True)
                 if not hid or not text:
                     continue
+                if hid.startswith("optional--"):
+                    continue   # collapsed deep-dives stay out of the nav
                 disp = text if len(text) <= 42 else text[:39] + "…"
                 parts.append(
                     f'<a class="h2-link" href="#{hid}" title="{text}">{disp}</a>')
