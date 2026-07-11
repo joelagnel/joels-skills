@@ -69,8 +69,13 @@ until both are done.
 ### Phase 0 — Interview & scope
 
 Before researching anything, interview the user to shape the workshop. In Claude Code use
-`AskUserQuestion` for the multiple-choice parts; in other tools ask conversationally. Skip any
-question whose answer is already obvious from the topic or the request.
+`AskUserQuestion` for the multiple-choice parts. In Codex use the `request_user_input` tool,
+which has the same shape: a batch of questions, each with a short header (12 chars or fewer),
+2-3 option labels with one-line descriptions, and a free-form "Other" choice that the client
+adds automatically. Codex caps each call at 3 questions (and prefers 1), so run the interview
+as two or three consecutive calls rather than one big batch. In tools with neither, ask the
+questions conversationally. Skip any question whose answer is already obvious from the topic
+or the request.
 
 **Gauge the audience and desired depth** (this is what makes the workshop tailored rather than
 one-size-fits-all). Ask a short batch (≈3–5) covering:
