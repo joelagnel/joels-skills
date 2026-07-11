@@ -174,6 +174,7 @@ def render_page(page, idx, pages, content_dir, out_dir, title,
     whg.wrap_tables(soup)
     whg.wrap_quiz_sections(soup)
     whg.wrap_answer_key_sections(soup)
+    whg.wrap_optional_sections(soup)
 
     h1 = soup.find("h1")
     page_title = h1.get_text(strip=True) if h1 else page.get("nav", title)

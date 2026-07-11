@@ -246,7 +246,65 @@ fence. If lines must be omitted, split into two verbatim fences and put the elis
 prose between them, with the link to the full source-listing page alongside. Verify
 mechanically after drafting: check that each `python` fence matches a contiguous slice of the
 script (a ten-line checker beats eyeballing; real audits caught both a paraphrased line that
-never existed in the script and a fence missing one interior line).
+never existed in the script and a fence missing one interior line). One deliberate exception:
+a **minimal-essence illustration** — a few lines that teach the *idea* of a mechanism without
+the real script's generality. Allowed, but the introducing sentence must visibly label it
+("boiled down to its essence", "an illustration, simplified from the real code") and pair it
+with a link to the real implementation on the source page. Never pass an essence snippet off
+as a quote, and whitelist it explicitly in the fence checker.
+
+**The main path teaches; the harness stays backstage.** A reader must be able to complete a
+module's conceptual journey without opening the experiment script or the raw log — those are
+provenance, not required reading. Show code on the main path only when *every line shown
+serves the lesson*. The real failure this rule comes from: a module quoted the experiment's
+full generalized `forward()` (normalizer slots, an inactive residual branch, record-keeping
+dicts, comments pointing at a later module) to teach three ideas — save each activation, ask
+autograd to retain its gradient, read `activation.grad` after `backward()`. The generality
+buried the lesson. The fix: state the idea as numbered steps, show the smallest verbatim
+snippet that runs the measurement (often 3–5 lines), put the PyTorch/tool mechanics in a
+collapsible optional section as a labeled minimal-essence illustration, and link the full
+implementation on the Source page for the curious. Two corollaries:
+
+- **Never show plotting or logging code on the main path.** Colors, `semilogy` calls, and
+  format strings teach nothing about the topic; the chart itself plus a one-clause "computed
+  and logged by Section N's pass" citation carries all the provenance.
+- **Inactive machinery must not surface in the main path.** A shared experiment class serving
+  many variants is *good design* (one code path is itself a control — variants differ only in
+  options); the mistake is only making the reader tour it. If an identity normalizer or a
+  disabled branch shows up in something you quote, either quote a smaller region or spend at
+  most one sentence turning it into a foreshadow of the module that activates it.
+
+**Shape measurement modules as predict → run → observe → explain.** The weak shape is
+read-prose → inspect-script → inspect-log → read-interpretation. The strong shape:
+
+1. **Predict** — before showing any result, have the reader commit (a one-line callout: "if
+   each layer keeps a tenth of the signal, how much survives four layers? Write it down").
+2. **Run** — one small command or snippet produces the measurement (see the main-path rule
+   above for how much code that should be).
+3. **Observe** — lead with the most intuitive artifact (a diagram or plot of the measured
+   thing), then the core numbers as a *designed* table (next rule). Let the prediction land
+   or break here.
+4. **Explain** — only now the formula/mechanism, tied to quantities the reader just saw.
+   When the explanation must *diagnose* between causes, present the competing hypotheses
+   first, each with what it would predict in the measurements, then reveal the measured
+   verdict. "It's not saturation" discovered beats "it's not saturation" asserted.
+
+Close the loop with a **change-one-variable exercise**: name the script's knobs (depth,
+width, activation, init scale), ask for a prediction per turn of a knob, and wire each to a
+measurement the script already logs so the reader can check immediately.
+
+**The core result gets a designed table, not a log dump.** The single most important
+measurement in the workshop deserves the most deliberate presentation, not a monospace
+capture with nine columns. Build a small markdown table: ordered in the direction the
+narrative travels (e.g. the direction the gradient flows), with a derived column that does
+the division for the reader ("retained from previous layer: 12%, 10%, 9.6%"), introducing
+**one quantity at a time** (the traveling signal first; the per-parameter gradient as its
+consequence, second). The raw capture still appears — linked, or shown later at the moment
+its extra columns become relevant (e.g. in the diagnosis step) — because it proves
+provenance; but it is the instrument readout, not the lesson. And state the scope of the
+numbers explicitly: exact norms depend on seed, width, and batch, so tell the reader "rerun
+in the pinned environment and the log matches byte for byte; change anything and every digit
+moves — the finding is the ratio structure, not the digits."
 
 **The experiment script is reader-facing — comment it like a teaching artifact.** It gets
 rendered as the Source page and copied by readers, so a banner comment per section is not
@@ -311,6 +369,19 @@ only the stated prerequisites plus what earlier pages taught. Any clause that wo
 reader ask "what's that?" or "why would it work that way?" gets a build-up, a rephrase to its
 outcome, or the axe. Run this as an explicit audit pass after drafting, not as a hope.
 
+**Goal lines pose the question; they don't preprint the answer.** A measurement module's
+**Goal** (and its blurb on the landing page) should be inquiry-driven — what will be measured
+and what the measurement will decide — not a spoiler of the measured value. Real example:
+"measure the per-layer gradient cliff: a factor of ~0.1 per layer" hands over the punchline
+the module exists to let the reader discover (and kills the predict step). Better: "measure
+how much gradient survives at each layer, and use the measurements to decide whether the loss
+comes from saturation, weight scale, or their combination." The same goes for charts: **a
+figure shown in module N must not carry a later module's cure** (the fix's curve sitting next
+to the failure answers a question the reader hasn't asked yet). Render a solo variant of the
+figure for module N, show the comparison in the module that introduces the fix, and if you
+want the pull-forward, make it an explicit one-sentence teaser at the module's end ("next, the
+same measurement with X added").
+
 **Explain the load-bearing objects, not just name them.** Naming a term (in Module 0 or inline) is
 not the same as explaining how it *works*. If your argument's logic depends on how something
 *behaves* — an activation's derivative, a loss's gradient, a normalizer's effect, a data structure's
@@ -343,7 +414,15 @@ one-line measurement showed the plain network's average slope was already 0.24, 
 maximum, *not* saturated. The real mechanism was scale-preservation across depth. Measuring the
 pre-activations is what surfaced the correct story.) When your mechanism claim depends on an
 internal quantity (a slope, a variance, a distribution, a rate), **print that quantity** and cite
-it like any other captured number.
+it like any other captured number. Two sharpenings, both from real reader pushback:
+
+- **A mean can hide a tail.** When the argument is "not X" and the evidence is an average
+  ("mean slope 0.24, so not saturated"), also print a distribution statistic: the fraction of
+  units beyond a threshold, a min/median, or a histogram. "Mean slope 0.242, units with slope
+  < 0.05: 0.0%" closes the loophole the mean alone leaves open.
+- **Name metrics neutrally.** A column called `W shrink` presumes the value is below 1 and
+  confuses the reader the first time a configuration amplifies. Prefer direction-neutral
+  names (`W gain`, "RMS matrix gain") and let the measured value say which way it goes.
 
 **Develop the intuition for a mechanism — don't just assert it.** When a step in your explanation
 rests on *how* or *why* something works (not merely *that* it does), build the reader up to it
@@ -481,6 +560,11 @@ beside the markdown file with:
 - **Sticky sidebar** ToC with JS scroll-position highlighting (h2 + h3 headings)
 - **Quiz sections** rendered as blue callout boxes
 - **Answer key sections** wrapped in collapsible `<details>` (click to reveal)
+- **Optional deep-dive sections** — any h3/h4 with an explicit `{#optional--<slug>}` anchor
+  (e.g. `### How was this measured? {#optional--how-measured-2}`) is wrapped in a collapsible
+  `<details>` (violet accent, closed by default) and kept out of the sidebar nav. Use these to
+  keep instrumentation, tool mechanics, and long derivations available but off the main
+  teaching path; links targeting content inside still work (the anchor JS opens the box)
 - **Syntax-highlighted code** via Pygments github-dark theme
 - **Diagram PNGs/SVGs** embedded as base64 (fully self-contained, no external deps)
 - **LaTeX math** — write display math as `$$...$$` and inline math as `\(...\)` in the markdown;
@@ -534,7 +618,8 @@ Notes specific to the wiki shape:
 - Each module page holds **its own quiz and answer key** — use `### Quiz {#quiz-N}` and
   `### Answer Key {#answer-key--module-N}` within that page; the generator wraps them into the blue
   callout and collapsible `<details>` exactly as in the single-page flow, and prev/next links come
-  from the manifest order.
+  from the manifest order. `{#optional--*}` deep-dive sections (step 5) work per page the same
+  way.
 - The exam is a prebuilt `exam.html`; list it as an `"external": true` page so it appears in the
   sidebar without the generator trying to render it. Point the exam's answer-explanation links at
   the module pages (`module-N.html`), not a `WORKSHOP.html`.
@@ -614,6 +699,8 @@ If you keep your workshops in a git repo, commit the `<slug>/` directory like an
 | Prerequisites | Confirmed installed (or gaps surfaced) before drafting | Commands the author can't actually run |
 | Commands | Real captured output, cited to a file | Invented / handwave output |
 | Captures | Citation names the producing script + section | "(captured in foo.log)" with no producer |
+| Teaching path | Minimal lesson-serving snippets; harness behind optional sections | Framework `forward()` + plotting loops on the main path |
+| Core result | Designed table, one quantity at a time, ratios framed | Nine-column log dump as the primary presentation |
 | Overview / previews | Outcomes in the reader's starting vocabulary | Leans on concepts a later module introduces |
 | Diagrams | Explain the mental model | Decorate; restate the prose |
 | Quizzes | Test reasoning | Test trivia / surface recall |
@@ -642,6 +729,17 @@ Two shapes work well; pick per the Phase 0 style answer:
   user approves.
 - **Don't write quizzes that pattern-match the prose.** A reader who skimmed should get them wrong;
   a reader who *understood* should get them right.
+- **Don't write numerically ambiguous quiz questions.** If the answer is a product of N
+  factors, the wording must pin N: "the gradient must cross six transformations, each
+  retaining 0.1 — estimate what survives" is answerable; "a 6-hidden-layer network shows a
+  factor of 0.1 per layer — estimate the ratio" is not, because the reader cannot tell how
+  many multiplications separate the two quantities being compared.
+- **Don't make the reader tour your instrumentation.** The main path never requires opening
+  the experiment script or the raw log; measurement mechanics live in a collapsible
+  `{#optional--*}` section and the full source stays on the Source page (see step 3).
+- **Don't spoil the discovery.** Goal lines and landing-page blurbs pose the question rather
+  than quoting the measured punchline, and a module's figures must not carry a later module's
+  fix (teaser sentence at the end instead; see step 3).
 - **Don't create a workshop without a reproducibility section** when experiments depend on specific
   software versions, hardware, or setup — future readers will not remember.
 - **Don't preview mechanisms in vocabulary the reader doesn't have yet.** The overview and all

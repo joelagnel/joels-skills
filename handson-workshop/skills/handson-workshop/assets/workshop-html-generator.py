@@ -6,6 +6,8 @@ Features:
   - Sticky sidebar table of contents with JS scroll-position highlighting
   - Quiz sections wrapped in a blue callout box
   - Answer key sections wrapped in collapsible <details> elements
+  - Optional deep-dive sections (h3/h4 with {#optional--*} anchors) wrapped in
+    collapsible <details>, kept out of the sidebar nav
   - Syntax-highlighted fenced code blocks (Pygments github-dark style)
   - Diagram PNGs/SVGs embedded as base64 data URIs (fully self-contained)
   - Modern learning-conducive color theme (calm blue/navy/teal palette)
@@ -115,6 +117,10 @@ PICO_OVERRIDES = """
   --ans-sum-bg:      #dcfce7;
   --ans-sum-text:    #14532d;
   --ans-body-bg:     #f0fdf4;
+  --opt-border:      #7c3aed;
+  --opt-sum-bg:      #ede9fe;
+  --opt-sum-text:    #4c1d95;
+  --opt-body-bg:     #f5f3ff;
   --border:          #e2e8f0;
   --table-row-hover: var(--quiz-bg);
   --meta-bg:         #f8faff;
@@ -158,6 +164,10 @@ PICO_OVERRIDES = """
     --ans-sum-bg:      #143124;
     --ans-sum-text:    #bbf7d0;
     --ans-body-bg:     #0d1f17;
+    --opt-border:      #a78bfa;
+    --opt-sum-bg:      #251b3f;
+    --opt-sum-text:    #ddd6fe;
+    --opt-body-bg:     #16112a;
     --border:          #243049;
     --table-row-hover: #1a253c;
     --meta-bg:         #131c2e;
@@ -200,6 +210,10 @@ PICO_OVERRIDES = """
   --ans-sum-bg:      #143124;
   --ans-sum-text:    #bbf7d0;
   --ans-body-bg:     #0d1f17;
+  --opt-border:      #a78bfa;
+  --opt-sum-bg:      #251b3f;
+  --opt-sum-text:    #ddd6fe;
+  --opt-body-bg:     #16112a;
   --border:          #243049;
   --table-row-hover: #1a253c;
   --meta-bg:         #131c2e;
@@ -654,6 +668,44 @@ details.answer-key-section[open] > summary::before { transform: rotate(90deg); }
 .answer-body p, .answer-body li { color: var(--text); }
 .answer-body p a { color: var(--ans-border); font-weight: 600; }
 
+/* ── Optional deep-dive sections (collapsible) ──────────────────────────── */
+
+details.optional-section {
+  border: 1px solid var(--opt-sum-bg);
+  border-left: 4px solid var(--opt-border);
+  border-radius: 0 8px 8px 0;
+  margin: 1.25rem 0;
+  overflow: hidden;
+}
+details.optional-section > summary {
+  background: var(--opt-sum-bg);
+  padding: .7rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--opt-sum-text);
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+details.optional-section > summary::-webkit-details-marker { display: none; }
+details.optional-section > summary::before {
+  content: "\\25B6";
+  font-size: .65em;
+  transition: transform .2s ease;
+  color: var(--opt-border);
+  flex-shrink: 0;
+}
+details.optional-section[open] > summary::before { transform: rotate(90deg); }
+.optional-body {
+  padding: 1rem 1.25rem;
+  background: var(--opt-body-bg);
+  color: var(--text);
+}
+.optional-body p, .optional-body li { color: var(--text); }
+
 /* ── Meta info block (Time / Difficulty / Exam) ─────────────────────────── */
 
 .meta-block {
@@ -1084,6 +1136,8 @@ def build_sidebar(soup):
         text = tag.get_text(strip=True)
         if not hid or not text:
             continue
+        if hid.startswith('optional--'):
+            continue   # collapsed deep-dives stay out of the nav
         items.append((tag.name, text, hid))
 
     if not items:
@@ -1140,6 +1194,42 @@ def wrap_answer_key_sections(soup):
 
         h3.insert_before(details)
         h3.extract()  # id moved to <details>
+        for s in siblings:
+            body_div.append(s.extract())
+
+
+def wrap_optional_sections(soup):
+    """Wrap h3/h4s whose id starts with "optional--" (plus their content, up
+    to the next heading/hr) in a collapsible <details class="optional-section">.
+
+    Authors opt in with an explicit anchor:
+
+        ### How was this measured? {#optional--how-measured-2}
+
+    This keeps deep-dive material (instrumentation, full implementations,
+    long derivations) available but out of the main teaching path: the
+    reader sees one click-to-expand summary line instead of a page of
+    harness code. Links that target ids inside the collapsed body still
+    work; the anchor JS opens the ancestor <details> on navigation."""
+    for hx in list(soup.find_all(['h3', 'h4'],
+                                 id=lambda x: x and x.startswith('optional--'))):
+        siblings = []
+        for sib in hx.next_siblings:
+            if isinstance(sib, Tag) and sib.name in ('h2', 'h3', 'h4', 'hr'):
+                break
+            siblings.append(sib)
+
+        title = hx.get_text(strip=True)
+        details = soup.new_tag('details', **{'class': 'optional-section',
+                                             'id': hx.get('id')})
+        summary = soup.new_tag('summary')
+        summary.string = title
+        body_div = soup.new_tag('div', **{'class': 'optional-body'})
+        details.append(summary)
+        details.append(body_div)
+
+        hx.insert_before(details)
+        hx.extract()  # id moved to <details>
         for s in siblings:
             body_div.append(s.extract())
 
@@ -1245,6 +1335,7 @@ def convert(md_path: Path, out_path: Path, embed_img: bool = True):
     wrap_tables(soup)
     wrap_quiz_sections(soup)
     wrap_answer_key_sections(soup)  # moves answer-key--module-N id from h3 → <details>
+    wrap_optional_sections(soup)    # moves optional--* id from h3/h4 → <details>
 
     title_tag = soup.find('h1')
     title_text = title_tag.get_text(strip=True) if title_tag else md_path.stem
