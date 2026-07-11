@@ -189,21 +189,38 @@ Copy `assets/workshop-template.md` to `WORKSHOP.md` and fill it in. Module struc
 Let the Phase 0 depth rubric drive the module count. Place all answer keys in a single section at
 the end.
 
-**Every captured block needs a frame: what produced it, and how to read it.** A raw log, table, or
-output dump dropped onto the page with only "(captured in `foo.log`)" makes the reader do your job.
-Around *every* capture give two things: (1) the **exact command or code** that produced it — so the
-number has a provenance the reader could rerun — and (2) a **"let's go deeper"** sentence that walks
-the key figures, saying what each column/field means and which value matters. The citation proves
-the output is real; the frame is what makes it *teach*. (Real example: a bare
-`autograd=+0.8808   p-y=+0.8808` line meant nothing until the workshop showed the four lines of code
-that generated it and then read it aloud — "at `z=2` the model predicts `p=0.8808`, so for the true
-label `y=0` the formula gives `p−y=+0.8808`, and autograd computes exactly that.") The bar is: a
-reader should never meet a number without knowing where it came from and what it's telling them.
-And "produced it" means the shown code **actually emits the output shown — including the
-print/log lines that write it**. A snippet that merely computes related values, followed by an
-output block none of the shown lines print, still reads as out-of-the-blue (real example: a
-two-moons *generation* snippet followed by a `samples: 1000 / split: 800/200` capture — the fix
-was showing the three `log(...)` lines that write those stats).
+**Present every capture in three beats: the code, the output, the walkthrough.** A capture
+teaches only when the reader can see what ran and what the numbers say, so structure each one
+the same way:
+
+1. **The code that emits it.** Quote the exact lines, including the `print`/`log` calls that
+   write the output. This is stricter than it sounds: a snippet that merely computes related
+   values, followed by output none of the shown lines print, breaks the chain of custody.
+   Introduce the block with narrative provenance (next rule): which pass of the script, what it
+   does, which log lines it writes.
+2. **The output, verbatim.**
+3. **A "let's go deeper" walkthrough** that reads the key figures aloud: what each column or
+   field means, and which value the argument turns on.
+
+A worked before/after, from a real review. The weak version showed a two-moons *generation*
+snippet, then this output, then a bare citation:
+
+```text
+samples: 1000 (500 per class), noise sigma = 0.1
+split: 800 train / 200 test
+(Captured in captures/results.log lines 8-10.)
+```
+
+The generation code never prints those lines, the citation names a file the reader has no way
+to browse, and the numbers are left to speak for themselves. The fixed version runs the three
+beats: "Section 1's pass then shuffles, holds out a test set, and logs the dataset's vital
+signs; these `log(...)` lines write the capture below, at lines 8-10:", then the actual
+`log(f"  samples: ...")` lines, then the output, then "Let's go deeper: 1,000 points, perfectly
+balanced at 500 per class, so 50% accuracy is exactly the coin-flip baseline; 200 points held
+out, so every accuracy quoted is on data the network never saw."
+
+The bar: a reader should never meet a number without knowing what ran to produce it and what it
+is telling them.
 
 **Cite the producer, not just the artifact — and do it as narrative, not a bracketed
 afterthought.** Every capture must be traceable to the run that produced it: the script (linked
