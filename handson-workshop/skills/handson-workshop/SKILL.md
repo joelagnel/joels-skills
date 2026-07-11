@@ -111,6 +111,18 @@ Let the user accept the narrowed scope, pick a different starting slice, or expl
 and proceed full-size. Producing one bloated workshop is a failure mode — a focused starter plus a
 roadmap is almost always the better outcome.
 
+**One invocation builds one workshop.** When the user accepts the narrowed scope, this run
+produces Workshop 1 only; the follow-on workshops are NOT built in the same run. Each is built
+later by re-invoking this skill with its slice as the topic (e.g.
+`/handson-workshop "X internals: <workshop 2 slice>"`), landing in its own sibling `<slug>/`
+directory. The roadmap itself is therefore a deliverable, not just talk: record it in Workshop
+1's landing page as a short "Where this series goes next" section that lists each planned
+workshop, its slice, and what it assumes the reader learned from the earlier ones, so a future
+invocation can pick up any slice without re-deriving the plan. When building a later workshop in
+the series, read that roadmap first and cross-link back ("builds on Workshop 1's ..."). An
+explicit full-size override also stays a single workshop in this one invocation (usually the
+multi-page wiki shape); it never fans out into several workshops in one run.
+
 ### Phase 1 — Systems exploration & prerequisites
 
 Because the workshop is grounded in **real captured output**, the machine you author on must be
