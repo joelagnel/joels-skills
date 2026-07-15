@@ -325,6 +325,38 @@ plt.savefig('/tmp/latency_comparison.png', dpi=150)
 print("Saved to /tmp/latency_comparison.png")
 ```
 
+### Matplotlib Venn Diagram
+
+For set overlap / membership (feature matrices, taxonomy overlap, "which configs share
+which properties"). Requires `pip install matplotlib-venn`.
+
+```python
+#!/usr/bin/env python3
+"""Venn diagram of feature overlap between two implementations (static PNG)."""
+import matplotlib.pyplot as plt
+from matplotlib_venn import venn2  # venn3 for three sets
+
+# Sets of feature names supported by each implementation
+driver_a = {'suspend', 'vram', 'display', 'compute'}
+driver_b = {'compute', 'display', 'virtualization'}
+
+plt.figure(figsize=(8, 6))
+v = venn2([driver_a, driver_b], set_labels=('Driver A', 'Driver B'))
+
+# Optional: replace subset counts with the actual member names
+v.get_label_by_id('10').set_text('\n'.join(sorted(driver_a - driver_b)))
+v.get_label_by_id('01').set_text('\n'.join(sorted(driver_b - driver_a)))
+v.get_label_by_id('11').set_text('\n'.join(sorted(driver_a & driver_b)))
+
+plt.title('Feature Support Overlap')
+plt.tight_layout()
+plt.savefig('/tmp/feature_venn.png', dpi=150)
+print("Saved to /tmp/feature_venn.png")
+```
+
+Keep venn diagrams to 2-3 sets; beyond that the regions become unreadable — switch to a
+feature matrix table instead.
+
 ## NetworkX for Graph Analysis
 
 ```python

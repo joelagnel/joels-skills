@@ -1,6 +1,6 @@
 ---
 name: handson-workshop
-description: Create a comprehensive, self-contained hands-on workshop for any technical topic. Use when the user invokes /handson-workshop <topic> (e.g., /handson-workshop "git internals", /handson-workshop "HTTP caching", /handson-workshop sqlite). First interviews the user to gauge audience knowledge-level and desired depth, then explores the local system to confirm the tooling needed to reproduce the experiments (offering to install missing prerequisites with the user's approval), and may suggest narrowing an over-broad topic into a smaller starter workshop plus a follow-on series. Then it produces (1) WORKSHOP.md with modules — each containing a diagram, hands-on commands with real captured output, and a quiz that links to an answer key — (2) WORKSHOP.html, a styled, self-contained HTML version with sidebar ToC, collapsible answer keys, and syntax-highlighted code, and (3) a standalone exam.html with 15-20 auto-graded questions (1-100 score, 70 to pass). Workshops are grounded in concrete output, not invented examples. For large or multi-module workshops it can instead emit a multi-page "wiki" (a landing page plus one page per module, with a persistent cross-page sidebar and prev/next navigation) via a separate generator.
+description: Create a comprehensive, self-contained hands-on workshop for any technical topic. Use when the user invokes /handson-workshop <topic> (e.g., /handson-workshop "git internals", /handson-workshop "HTTP caching", /handson-workshop sqlite). First interviews the user to gauge audience knowledge-level and desired depth, including a short batch of technical multiple-choice questions that calibrates depth beyond self-report, then explores the local system to confirm the tooling needed to reproduce the experiments (offering to install missing prerequisites with the user's approval), and may suggest narrowing an over-broad topic into a smaller starter workshop plus a follow-on series. Then it produces (1) WORKSHOP.md with modules — each containing a best-fit diagram (block, sequence, flowchart, state machine, venn, or a bar/histogram/box chart), sample code for technical topics, hands-on commands with real captured output, and a quiz that links to an answer key — (2) WORKSHOP.html, a styled, self-contained HTML version with sidebar ToC, collapsible answer keys, and syntax-highlighted code, and (3) a standalone exam.html with 15-20 auto-graded questions (1-100 score, 70 to pass). Workshops are grounded in concrete output, not invented examples. For large or multi-module workshops it can instead emit a multi-page "wiki" (a landing page plus one page per module, with a persistent cross-page sidebar and prev/next navigation) via a separate generator.
 ---
 
 # Hands-On Workshop Creator
@@ -32,7 +32,8 @@ table-of-contents sidebar:
 ├── WORKSHOP.html     # styled, self-contained HTML version (built by workshop-html-generator.py)
 ├── exam.html         # standalone, auto-graded final exam
 ├── diagrams/         # diagram source + rendered PNG/SVG (if pre-rendering)
-└── captures/         # logs, command output, transcripts (real experiment output)
+├── captures/         # logs, command output, transcripts (real experiment output)
+└── snippets/         # standalone runnable illustration snippets (technical topics; see step 3)
 ```
 
 **Multi-page "wiki"** (for large / deep / heavily-expanded workshops, or when the user asks for it)
@@ -53,7 +54,8 @@ expand independently:
 ├── module-N.html
 ├── exam.html         # standalone, auto-graded final exam (linked from the sidebar)
 ├── diagrams/         # referenced from content/ as ../diagrams/foo.png
-└── captures/
+├── captures/
+└── snippets/         # standalone runnable illustration snippets (technical topics; see step 3)
 ```
 
 In the multi-page shape there is **no `WORKSHOP.md`**; the landing page (`index.html`) is the entry
@@ -90,6 +92,39 @@ one-size-fits-all). Ask a short batch (≈3–5) covering:
   *single-page* (one scroll, default) vs *multi-page wiki* (a landing page + one page per module
   with a persistent cross-page sidebar). Recommend the wiki when you expect more than ~5–6
   substantial modules or a lot of per-module detail; otherwise single-page.
+
+**Calibrate with technical multiple-choice questions — don't trust self-report alone.**
+Self-assessed level is noisy: "intermediate" means something different to everyone, and readers
+routinely under- or over-sell themselves. After the self-report batch, run a short **diagnostic
+batch** of 3–5 topic-specific technical multiple-choice questions that climb the difficulty
+ladder:
+
+- one **vocabulary** question — can they pick the correct definition of the topic's most
+  load-bearing term?
+- one or two **working-knowledge** questions — "what happens when …?", "which of these does X?"
+- one or two **internals / edge-case** questions — the kind only someone who has debugged the
+  thing answers correctly.
+
+Write them like good quiz questions: one clearly correct answer, and distractors that are each
+a *real, common misconception* rather than filler, so a wrong answer carries information. Frame
+the batch as tuning, not testing: "A few quick technical questions so the workshop lands at the
+right depth — guessing is fine." Use the same question tool as the self-report batch.
+
+Combine the diagnostic with the self-report, and let **demonstrated performance win** when the
+two disagree:
+
+| Diagnostic outcome | Treat as |
+|--------------------|----------|
+| Misses the vocabulary question | Beginner (whatever was self-reported); Module 0 required |
+| Vocabulary + working knowledge right, internals missed | Intermediate; each missed internals question becomes an explicit target for the module that covers it |
+| Everything right, including internals | Advanced; skip Module 0, push the experiments deeper |
+
+The specific wrong answers are worth more than the score: every distractor the user picked
+names a live misconception. Note which were chosen and wire each into the module that touches
+it — address it head-on ("a common assumption is X; the next measurement tests it"), and reuse
+it as that module's predict step or as a quiz distractor. Skip the diagnostic only when the
+user's level is already demonstrated (they built the system, or the conversation makes it
+obvious) or they explicitly decline the interview.
 
 **Depth rubric — map answers to workshop shape:**
 
@@ -179,7 +214,8 @@ Copy `assets/workshop-template.md` to `WORKSHOP.md` and fill it in. Module struc
 **Commands.** Exact lines to copy.
 **Expected output.** Verbatim — cite source: (Captured in `captures/foo.log` line NN.)
 
-(Diagram if it explains the model better than prose.)
+(Best-fit diagram if it explains the model better than prose — see step 4.
+Sample code if the concept manifests in code — see the sample-code rule below.)
 
 **Question.** Discovery prompt; 2-4 sub-questions if useful.
 
@@ -273,6 +309,31 @@ implementation on the Source page for the curious. Two corollaries:
   options); the mistake is only making the reader tour it. If an identity normalizer or a
   disabled branch shows up in something you quote, either quote a smaller region or spend at
   most one sentence turning it into a foreshadow of the module that activates it.
+
+**Technical topics teach through sample code, not just commands and prose.** For
+computing-related topics, a short code sample is often the clearest statement of a concept —
+an API's contract, a data structure's shape, a race window, a syscall sequence. Any module
+whose concept manifests in code should show some, drawn from one of two sources:
+
+1. **An excerpt from the experiment / reproducer script** — prefer this; it is already
+   grounded, and the verbatim-quoting rules above apply unchanged.
+2. **A purpose-written illustration snippet** — brand-new code written only to teach, for when
+   the experiment script has no suitably small region. Three rules keep these honest:
+   - **Run it.** A snippet that shows output is an experiment: execute it, save the source
+     under `snippets/`, capture its output like any other run, and cite both. Code that
+     genuinely cannot run (pseudo-code sketching an algorithm) must show no output, and the
+     introducing sentence must label it pseudo-code.
+   - **Label it.** Introduce it as standalone teaching code ("a minimal, self-contained
+     snippet — not part of the experiment script") so it is never mistaken for the real
+     implementation. Same honesty bar as the minimal-essence rule above.
+   - **Keep it minimal.** Every line shown serves the lesson (the main-path rule applies);
+     if it needs imports and boilerplate to run, show only the teaching region and note that
+     the file in `snippets/` holds the runnable whole.
+
+   A snippet shown in full in the module body needs no Source page of its own. When only its
+   teaching region is shown, the runnable whole is a raw artifact like the experiment script:
+   in the wiki shape, render it on a Source page (one page can hold every snippet) per the
+   never-hyperlink-raw-files rule in step 5b, and link the prose mention to that page.
 
 **Shape measurement modules as predict → run → observe → explain.** The weak shape is
 read-prose → inspect-script → inspect-log → read-interpretation. The strong shape:
@@ -487,12 +548,28 @@ rsvg-convert -w 1500 diagrams/foo.svg -o diagrams/foo.png
 ![Architecture](diagrams/foo.png)
 ```
 
-**Two kinds of diagram — use both.** D2 diagrams are for *structure*: which boxes exist, how they
-connect, what the flow is (architectures, pipelines, state machines, the chain of a computation).
-But for *quantitative* topics — anything involving a function, a distribution, a curve, a
-measurement over time — a **plot of the real thing beats a box diagram every time**, and it's the
-most under-used tool in weak workshops. Generate these with matplotlib *inside the same experiment
-script that produces your captures*, so they're real, not sketched:
+**Match the diagram type to the relationship it must show — a block diagram is not the
+default.** Ask first what *kind* of thing the reader needs to see, then pick the form that
+shows it (the full selection guide is in the handson-diagrams skill under "Diagram Type
+Selection"):
+
+| The idea to show | Best-fit diagram | Tool |
+|------------------|------------------|------|
+| Components and how they connect (architecture, pipeline, layers) | Block diagram | D2 (ELK) |
+| Who-talks-to-whom over time (protocol handshake, API call chain, IPC) | Sequence diagram | D2 `shape: sequence_diagram` |
+| Branching decision logic (algorithm, retry policy, hit/miss path) | Flowchart | D2 |
+| Lifecycle with states and transitions | State machine | D2 (see handson-diagrams `state-machines.md`) |
+| Overlap / membership among a few sets (feature matrices, taxonomies) | Venn diagram | matplotlib (`matplotlib-venn`) |
+| A handful of named quantities compared | Bar chart | matplotlib, from the experiment script |
+| The distribution of many measurements | Histogram (one group); box plot (comparing groups) | matplotlib, from the experiment script |
+| A function or measurement against a continuous variable | Line plot (log axis for geometric growth/decay) | matplotlib, from the experiment script |
+| Events on a shared time axis | Timeline | ASCII |
+
+The split to keep in mind: **D2 is for structure, plots are for quantities.** For *quantitative*
+topics — anything involving a function, a distribution, a curve, a measurement over time — a
+**plot of the real thing beats a box diagram every time**, and it's the most under-used tool in
+weak workshops. Generate plots with matplotlib *inside the same experiment script that produces
+your captures*, so they're real, not sketched:
 
 - the actual **function** you're reasoning about (e.g. an activation and its derivative, a loss
   curve, a latency-vs-load curve) — annotate the load-bearing feature (the max, the knee, the
@@ -719,14 +796,15 @@ If you keep your workshops in a git repo, commit the `<slug>/` directory like an
 | Component | Good | Bad |
 |-----------|------|-----|
 | Scope | Focused; over-broad topics split into a starter + roadmap | One bloated workshop covering everything |
-| Depth | Matched to the audience level from the interview | One-size-fits-all regardless of audience |
+| Depth | Matched to the level the interview *and* diagnostic questions measured | One-size-fits-all, or trusting self-report blindly |
 | Prerequisites | Confirmed installed (or gaps surfaced) before drafting | Commands the author can't actually run |
 | Commands | Real captured output, cited to a file | Invented / handwave output |
 | Captures | Citation names the producing script + section | "(captured in foo.log)" with no producer |
 | Teaching path | Minimal lesson-serving snippets; harness behind optional sections | Framework `forward()` + plotting loops on the main path |
+| Sample code | Verbatim script excerpts, or runnable snippets with captured output | Pseudo-code passing as real; snippet output never actually run |
 | Core result | Designed table, one quantity at a time, ratios framed | Nine-column log dump as the primary presentation |
 | Overview / previews | Outcomes in the reader's starting vocabulary | Leans on concepts a later module introduces |
-| Diagrams | Explain the mental model | Decorate; restate the prose |
+| Diagrams | Explain the mental model; type fits the relationship (sequence for time-order, histogram for distributions) | Decorate; restate the prose; block diagram for everything |
 | Quizzes | Test reasoning | Test trivia / surface recall |
 | Exam | Cover every module | Lopsided to one topic |
 | Reproducibility | Exact environment + version + steps | "Should work on most systems" |
@@ -746,9 +824,17 @@ Two shapes work well; pick per the Phase 0 style answer:
 ## Anti-patterns
 
 - **Don't skip the interview.** Depth and scope are the two biggest levers on workshop quality;
-  guessing them wastes the reader's time.
+  guessing them wastes the reader's time. And don't stop at self-report: the technical
+  diagnostic questions (Phase 0) are what catch a self-described intermediate who is actually
+  a beginner, and the reverse.
 - **Don't fabricate command output.** If you can't run it, say "the output should resemble:" and
   label it explicitly. Prefer capturing real output even from a small probe.
+- **Don't show snippet output you never ran.** A purpose-written illustration snippet is an
+  experiment like any other: run it, keep the source in `snippets/`, capture the output, cite
+  both (see step 3).
+- **Don't default every illustration to a block diagram.** Time-ordered interactions want a
+  sequence diagram, branching logic a flowchart, a distribution a histogram, set overlap a
+  venn; pick the form that shows the relationship (see the table in step 4).
 - **Don't install tooling silently.** Surface the gap, propose the fix, and install only after the
   user approves.
 - **Don't write quizzes that pattern-match the prose.** A reader who skimmed should get them wrong;

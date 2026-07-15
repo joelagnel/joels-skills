@@ -346,6 +346,41 @@ side_panel: {
 
 Useful when one part of the diagram is sequential and another is parallel.
 
+## Sequence diagrams
+
+D2 has native sequence diagrams: set `shape: sequence_diagram` at the top level
+and every edge becomes a message between actors. Actors appear left-to-right in
+first-mention order, so introduce them in the order you want the columns.
+
+```d2
+# API job-submission call flow
+# Render with the standard recipe (see "Render recipe" above).
+shape: sequence_diagram
+
+client: "Client"
+api: "API server"
+db: "Database"
+
+client -> api: "POST /job"
+api -> db: "INSERT job"
+db -> api: "job id"
+api -> client: "202 Accepted"
+client -> api: "GET /job/<id>"
+api -> client: "status: running"
+```
+
+Notes:
+
+- The same render recipe applies (ELK layout, `--font-regular`/`--font-bold`,
+  `rsvg-convert` to PNG). Message labels count toward canvas width just like
+  edge labels — keep them short ("POST /job", not the full request body).
+- Spans (nested lifeline activations, e.g. `api.handling`) and groups are
+  supported for showing phases; use them sparingly, they widen the canvas.
+- Sequence diagrams are usually *portrait-ish*; verify label legibility at
+  phone-column width like any other diagram.
+- Prefer this over Mermaid's `sequenceDiagram` whenever the target can display
+  images (same reasons as the general preference order).
+
 ## Examples
 
 Consider a web-service architecture diagram as a full worked example — a

@@ -127,7 +127,7 @@ Choose the diagram format based on rendering context and complexity:
 | Diagram Type | Best For | Format | Reference |
 |--------------|----------|--------|-----------|
 | **Architecture / block** | **Layered systems, modules** | **D2 (ELK)** | [d2-diagrams.md](references/d2-diagrams.md) |
-| Sequence | Code flow, API calls | D2 / ASCII (Mermaid as fallback) | [d2-diagrams.md](references/d2-diagrams.md) · [ascii-art.md](references/ascii-art.md) |
+| Sequence | Code flow, API calls | D2 `shape: sequence_diagram` / ASCII (Mermaid as fallback) | [d2-diagrams.md](references/d2-diagrams.md#sequence-diagrams) · [ascii-art.md](references/ascii-art.md) |
 | State Machine | Lifecycles, events | D2 / ASCII (Mermaid as fallback) | [state-machines.md](references/state-machines.md) |
 | Flowchart | Algorithms, decisions | D2 / ASCII | [d2-diagrams.md](references/d2-diagrams.md) |
 | Class Diagram | Struct relationships | D2 (Mermaid as fallback) | [mermaid-code-flow.md](references/mermaid-code-flow.md#class-diagrams) |
@@ -137,6 +137,7 @@ Choose the diagram format based on rendering context and complexity:
 | **Geographic Map** | US/world maps | **Folium** | [python-visualization.md](references/python-visualization.md#folium---geographic-maps) |
 | Histogram | Distributions | Bokeh/Matplotlib | [python-visualization.md](references/python-visualization.md) |
 | Box Plot | Statistical comparison | Bokeh/Matplotlib | [python-visualization.md](references/python-visualization.md) |
+| Venn | Set overlap / membership | matplotlib-venn | [python-visualization.md](references/python-visualization.md#matplotlib-venn-diagram) |
 | Heat Map | Correlation, intensity | Bokeh/Matplotlib | [python-visualization.md](references/python-visualization.md) |
 | 3D Surface | Multi-variable analysis | Matplotlib | [python-visualization.md](references/python-visualization.md) |
 | Flame Graph | CPU profiling | perf + FlameGraph | [python-visualization.md](references/python-visualization.md) |
@@ -322,6 +323,9 @@ pip install folium geopandas
 
 # Static visualizations (when HTML not needed)
 pip install matplotlib seaborn
+
+# Venn diagrams
+pip install matplotlib-venn
 
 # Graph structures
 pip install graphviz networkx scipy

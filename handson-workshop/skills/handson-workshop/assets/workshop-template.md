@@ -12,7 +12,10 @@ Each module has the same shape:
 - **Setup** — what state your system should be in
 - **Commands** — exact lines to copy
 - **Expected output** — the literal output captured from a real run
-- **Diagram** — D2 diagram explaining the model (when prose alone is not enough)
+- **Diagram** — best-fit diagram explaining the model: block, sequence, flowchart, state
+  machine, venn, or a chart (bar / histogram / box plot), used when prose alone is not enough
+- **Sample code** — for technical topics: a verbatim excerpt from the experiment script, or a
+  minimal runnable illustration snippet with its output captured
 - **Quiz** — discovery prompts, with a link to the answer key
 
 ## Table of Contents
