@@ -439,6 +439,30 @@ the gradient by one factor per layer"; the fix developed *why* the signal travel
 load-bearing-objects rule above: that one says show the *property*; this one says show the
 *reasoning* that uses it.
 
+**Corner the mechanism with failed attempts before you build it.** Naming the problem is not
+the same as making the reader feel why *this* mechanism is the answer. Before presenting a
+design (a blend, a cache, a lock, a normalizer), run the argument as attempts:
+
+1. State the problem as a concrete failure the reader can verify on real numbers.
+2. Show the **do-nothing counterfactual** — what happens *without* the mechanism — ideally as
+   a one-line logical or measured consequence ("the input row is identical in both sentences,
+   and identical inputs give identical outputs, so no downstream computation can ever recover
+   the context").
+3. Try the **naive simplest fix** first, worked out on the same real numbers, and let its
+   specific failure *name the requirement* the real design satisfies.
+4. Only then introduce the mechanism, which now arrives as the unique survivor of the
+   failures rather than as a gift from the author.
+
+(Real example, from reader feedback on the attention workshop: the weighted blend was
+introduced as "the simplest possible flow is averaging", and the reader asked why blend at
+all. The fix walked the chain: no mixing is *provably* context-blind; an equal average
+repairs that but pastes one sentence-summary vector over every word and gives filler words a
+full share; those two failures force exactly per-word, relevance-weighted mixing — which is
+what attention is.) Two placement notes: the mechanism's *name* belongs at this moment too —
+once the requirement is on the table, "those per-word mixing weights are the *attention*"
+lands as a summary instead of jargon — and the naive attempt is a natural predict moment
+("one problem gets fixed and a new one appears; name both before reading on").
+
 ### 4. Add diagrams
 
 Use the companion **handson-diagrams** skill (installed alongside this one) for diagram guidance.
@@ -737,6 +761,9 @@ Two shapes work well; pick per the Phase 0 style answer:
 - **Don't make the reader tour your instrumentation.** The main path never requires opening
   the experiment script or the raw log; measurement mechanics live in a collapsible
   `{#optional--*}` section and the full source stays on the Source page (see step 3).
+- **Don't hand over a mechanism the problem hasn't forced yet.** "The fix is X" arriving
+  before the reader has watched the do-nothing counterfactual and the naive attempt fail
+  reads as a gift from the author; corner the design with failed attempts first (see step 3).
 - **Don't spoil the discovery.** Goal lines and landing-page blurbs pose the question rather
   than quoting the measured punchline, and a module's figures must not carry a later module's
   fix (teaser sentence at the end instead; see step 3).
