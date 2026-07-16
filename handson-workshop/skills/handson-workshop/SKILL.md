@@ -524,6 +524,34 @@ once the requirement is on the table, "those per-word mixing weights are the *at
 lands as a summary instead of jargon — and the naive attempt is a natural predict moment
 ("one problem gets fixed and a new one appears; name both before reading on").
 
+**Data needs a story: before, after, and what the mechanism did.** A table of numbers
+never speaks for itself. Present it as a narrative that uncovers its real meaning: here
+is the data *without* the mechanism, here it is *with* it, and the mechanism did X and Y.
+When a module's payoff is a transformation, tell that story on one concrete datum:
+
+1. **Before** — the input as a small labeled table, plus what it means in plain words
+   ("bank's row reads: maybe water, maybe money, no evidence either way; definitely a
+   place").
+2. **The work** — each contribution as a full table row (weight times vector, every
+   slot), with the sum as the last row, so the reader watches the output get built.
+3. **After** — input and output side by side, each change named and explained ("water
+   0.3 → 0.435: river poured its water in; money 0.3 → 0.149: nobody else brought any").
+   End on what the output now means, against what the input meant; that contrast is the
+   meaning the raw numbers were hiding ("was: ambiguously both kinds of bank; now: given
+   'river' is nearby, the water kind").
+
+(Real example: the attention workshop showed bank's logged output vectors and traced just
+two multiplications in a dense paragraph; the reader called it "terse and dense". The fix
+was this story — bank's row before blending, the three weighted rows and their sum, then
+the before/after with the changes named: blending raised water and cut money, so "bank"
+now leans to the river meaning.)
+
+The intermediate numbers may be plain arithmetic derived from logged values (state the
+derivation, cite the logged inputs, and note when rounding can drift the last digit
+against the logged output) — no need to re-run the experiment and shift every downstream
+log citation. Litmus test: could the reader rebuild the output from the input with a
+pencil, using only what is on the page?
+
 ### 4. Add diagrams
 
 Use the companion **handson-diagrams** skill (installed alongside this one) for diagram guidance.
@@ -803,6 +831,7 @@ If you keep your workshops in a git repo, commit the `<slug>/` directory like an
 | Teaching path | Minimal lesson-serving snippets; harness behind optional sections | Framework `forward()` + plotting loops on the main path |
 | Sample code | Verbatim script excerpts, or runnable snippets with captured output | Pseudo-code passing as real; snippet output never actually run |
 | Core result | Designed table, one quantity at a time, ratios framed | Nine-column log dump as the primary presentation |
+| Payoff data | Told as a story: before, each contribution, the sum, after, changes named | Log dump plus two multiplications in dense prose |
 | Overview / previews | Outcomes in the reader's starting vocabulary | Leans on concepts a later module introduces |
 | Diagrams | Explain the mental model; type fits the relationship (sequence for time-order, histogram for distributions) | Decorate; restate the prose; block diagram for everything |
 | Quizzes | Test reasoning | Test trivia / surface recall |
@@ -850,6 +879,10 @@ Two shapes work well; pick per the Phase 0 style answer:
 - **Don't hand over a mechanism the problem hasn't forced yet.** "The fix is X" arriving
   before the reader has watched the do-nothing counterfactual and the naive attempt fail
   reads as a gift from the author; corner the design with failed attempts first (see step 3).
+- **Don't compress a transformation into scalar highlights in prose.** If the payoff is
+  "X became Y", tell the before/after story with every contribution and the visible sum
+  in a table; a paragraph tracing one or two products through the blend is provenance,
+  not teaching (see the data-needs-a-story rule in step 3).
 - **Don't spoil the discovery.** Goal lines and landing-page blurbs pose the question rather
   than quoting the measured punchline, and a module's figures must not carry a later module's
   fix (teaser sentence at the end instead; see step 3).
