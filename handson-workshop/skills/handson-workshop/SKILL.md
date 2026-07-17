@@ -430,6 +430,25 @@ only the stated prerequisites plus what earlier pages taught. Any clause that wo
 reader ask "what's that?" or "why would it work that way?" gets a build-up, a rephrase to its
 outcome, or the axe. Run this as an explicit audit pass after drafting, not as a hope.
 
+**Coherence audit: every "the X" points at something on the page, every heading is cashed
+below it.** After drafting, reread each page top to bottom and check three things (each a
+real reader flag):
+
+- **Antecedents.** "The fact", "this problem", "check it": whatever the phrase points at
+  must sit within the previous sentence or two, on the same page. If the referent is far
+  away, restate it ("check the claim just made: does 'bank' really get the same row in
+  both matrices?") instead of pointing at it.
+- **Headings are promises.** The first paragraph under a heading must explicitly connect
+  to the heading's claim. Real failure: a heading said "the lookup table cannot see the
+  sentence" and the paragraph below said only "the table has one row per word", leaving
+  the reader to derive the chain themselves (one row = one fixed meaning = the same
+  vector in every sentence).
+- **One name per concept, one meaning per name.** When a synonym enters, connect it
+  explicitly ("the weights, each word's blending recipe"); never reuse a phrase with a
+  second meaning nearby. Real failure: "one row per word" meaning one row per vocabulary
+  word in the table, then one row per sentence position in the matrix, two sentences
+  later.
+
 **Goal lines pose the question; they don't preprint the answer.** A measurement module's
 **Goal** (and its blurb on the landing page) should be inquiry-driven — what will be measured
 and what the measurement will decide — not a spoiler of the measured value. Real example:
