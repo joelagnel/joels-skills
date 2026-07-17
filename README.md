@@ -10,6 +10,7 @@ A collection of installable **skills** for [Claude Code](https://claude.com/clau
 - [Prerequisites](#prerequisites)
 - [Install — Claude Code](#install--claude-code)
 - [Install — Codex](#install--codex)
+- [Install — ChatGPT](#install--chatgpt)
 - [Quickstart](#quickstart)
 - [How a workshop is built](#how-a-workshop-is-built)
 - [License](#license)
@@ -87,6 +88,23 @@ Claude-Code-only dynamic syntax, so they run unchanged in Codex. Restart Codex t
 
 > Codex also supports *plugins* for distributing reusable skills; a Codex-plugin wrapper for this
 > kit is a possible future addition. For now the Codex side is a direct skill install.
+
+## Install — ChatGPT
+
+Both skills are also packaged as zips following the
+[Agent Skills open standard](https://agentskills.io/specification), ready for
+[ChatGPT's skills page](https://chatgpt.com/skills):
+
+1. Download `handson-workshop-<version>.zip` and `handson-diagrams-<version>.zip` from the
+   [latest release](https://github.com/joelagnel/joels-skills/releases/latest).
+2. On [chatgpt.com/skills](https://chatgpt.com/skills), upload each zip to install the skill.
+
+Each zip contains the skill folder at its root (`SKILL.md`, resources, `LICENSE.txt`, and
+`agents/openai.yaml` UI metadata). To rebuild the packages from a checkout:
+
+```bash
+python3 tools/package_chatgpt_skills.py <version>    # writes dist/<skill>-<version>.zip
+```
 
 ## Quickstart
 
