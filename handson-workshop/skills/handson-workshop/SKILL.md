@@ -555,7 +555,10 @@ When a module's payoff is a transformation, tell that story on one concrete datu
    ("bank's row reads: maybe water, maybe money, no evidence either way; definitely a
    place").
 2. **The work** — each contribution as a full table row (weight times vector, every
-   slot), with the sum as the last row, so the reader watches the output get built.
+   slot), with the sum as the last row, so the reader watches the output get built. When
+   the work is a matrix operation, spell out its mechanics on this datum (scale each
+   ingredient row by its weight, then add the columns); naming the shapes is not the same
+   as showing the arithmetic.
 3. **After** — input and output side by side, each change named and explained ("water
    0.3 → 0.435: river poured its water in; money 0.3 → 0.149: nobody else brought any").
    End on what the output now means, against what the input meant; that contrast is the
