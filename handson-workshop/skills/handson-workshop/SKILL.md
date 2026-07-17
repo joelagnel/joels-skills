@@ -437,7 +437,10 @@ real reader flag):
 - **Antecedents.** "The fact", "this problem", "check it": whatever the phrase points at
   must sit within the previous sentence or two, on the same page. If the referent is far
   away, restate it ("check the claim just made: does 'bank' really get the same row in
-  both matrices?") instead of pointing at it.
+  both matrices?") instead of pointing at it. The same goes for symbols: at the moment a
+  formula is finally executed ("the blend `weights @ X` produces the new vectors"),
+  restate what each operand concretely is right here (its contents, its shape, which
+  table the reader just saw it in) and what shape comes out.
 - **Headings are promises.** The first paragraph under a heading must explicitly connect
   to the heading's claim. Real failure: a heading said "the lookup table cannot see the
   sentence" and the paragraph below said only "the table has one row per word", leaving
