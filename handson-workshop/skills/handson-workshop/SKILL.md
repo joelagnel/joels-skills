@@ -225,54 +225,33 @@ Sample code if the concept manifests in code — see the sample-code rule below.
 Let the Phase 0 depth rubric drive the module count. Place all answer keys in a single section at
 the end.
 
-**Present every capture in three beats: the code, the output, the walkthrough.** A capture
-teaches only when the reader can see what ran and what the numbers say, so structure each one
-the same way:
+**Every capture arrives as code, output, walkthrough — with its provenance told in
+prose.** A capture teaches only when the reader can see what ran, what came out, and
+what the numbers say:
 
-1. **The code that emits it.** Quote the exact lines, including the `print`/`log` calls that
-   write the output. This is stricter than it sounds: a snippet that merely computes related
-   values, followed by output none of the shown lines print, breaks the chain of custody.
-   Introduce the block with narrative provenance (next rule): which pass of the script, what it
-   does, which log lines it writes.
+1. **The code that emits it** — the exact lines, including the `print`/`log` calls that
+   write the output shown; a snippet that merely computes related values, followed by
+   output none of the shown lines print, breaks the chain of custody. Introduce the
+   block by naming its producer inside the flowing sentence, not in a trailing
+   parenthetical: which pass of the script (a readable phrase hyperlinked to the source
+   page, never a bare bracket code the reader must decode cold), what that pass does in
+   one clause, and which log lines it writes.
 2. **The output, verbatim.**
-3. **A "let's go deeper" walkthrough** that reads the key figures aloud: what each column or
-   field means, and which value the argument turns on.
+3. **A "let's go deeper" walkthrough** that reads the key figures aloud: what each
+   column or field means, and which value the argument turns on.
 
-A worked before/after, from a real review. The weak version showed a two-moons *generation*
-snippet, then this output, then a bare citation:
+(Real before/after from review. Weak: a dataset-generation snippet, then "samples: 1000
+(500 per class)... (Captured in captures/results.log lines 8-10.)" — the shown code
+never prints those lines, the citation points at a file the reader cannot browse, and
+the numbers are left to speak for themselves. Fixed: "Section 1's pass then shuffles,
+holds out a test set, and logs the dataset's vital signs; these `log(...)` lines write
+the capture below, at lines 8-10:", then the actual logging lines, the output, then
+"Let's go deeper: 1,000 points, perfectly balanced at 500 per class, so 50% accuracy is
+exactly the coin-flip baseline; 200 held out, so every accuracy quoted is on data the
+network never saw.")
 
-```text
-samples: 1000 (500 per class), noise sigma = 0.1
-split: 800 train / 200 test
-(Captured in captures/results.log lines 8-10.)
-```
-
-The generation code never prints those lines, the citation names a file the reader has no way
-to browse, and the numbers are left to speak for themselves. The fixed version runs the three
-beats: "Section 1's pass then shuffles, holds out a test set, and logs the dataset's vital
-signs; these `log(...)` lines write the capture below, at lines 8-10:", then the actual
-`log(f"  samples: ...")` lines, then the output, then "Let's go deeper: 1,000 points, perfectly
-balanced at 500 per class, so 50% accuracy is exactly the coin-flip baseline; 200 points held
-out, so every accuracy quoted is on data the network never saw."
-
-The bar: a reader should never meet a number without knowing what ran to produce it and what it
-is telling them.
-
-**Cite the producer, not just the artifact — and do it as narrative, not a bracketed
-afterthought.** Every capture must be traceable to the run that produced it: the script (linked
-to its source-listing page, see the wiki notes), its section marker, and the log lines. But
-weave that provenance into the sentence that *introduces* the capture, rather than a mechanical
-parenthetical trailing it. "(Captured in `captures/results.log` lines 14–15.)" after the block
-reads as random; "(Measured by the [S3] pass; log lines 25 and 29.)" is traceable but still
-reads as bureaucracy. The narrative form teaches: "When [Section 3's pass of the experiment
-script](experiment-source.html) runs (it is the part that constructs the networks and inspects
-their starting state), these are the statistics obtained (`captures/results.log` lines 25 and
-29):" followed by the output block. Name the pass, gloss what it does in one clause, give the
-log lines, then show the capture. And spell section markers out as readable phrases ("Section
-3's pass of the experiment script", hyperlinked to the source page). Prose must never make the
-reader decode a bracket code like "[S3]" cold: use one only after the module itself has clearly
-defined what it means, and if the definition lives elsewhere (another module, the source page,
-the log), hyperlink the code to that definition with a brief gloss inline.
+The bar: a reader should never meet a number without knowing what ran to produce it and
+what it is telling them.
 
 **Quoted snippets are verbatim, or explicitly abridged — never paraphrased.** Readers copy
 snippets and diff them against the source, so every code fence must match the script
@@ -299,16 +278,13 @@ autograd to retain its gradient, read `activation.grad` after `backward()`. The 
 buried the lesson. The fix: state the idea as numbered steps, show the smallest verbatim
 snippet that runs the measurement (often 3–5 lines), put the PyTorch/tool mechanics in a
 collapsible optional section as a labeled minimal-essence illustration, and link the full
-implementation on the Source page for the curious. Two corollaries:
-
-- **Never show plotting or logging code on the main path.** Colors, `semilogy` calls, and
-  format strings teach nothing about the topic; the chart itself plus a one-clause "computed
-  and logged by Section N's pass" citation carries all the provenance.
-- **Inactive machinery must not surface in the main path.** A shared experiment class serving
-  many variants is *good design* (one code path is itself a control — variants differ only in
-  options); the mistake is only making the reader tour it. If an identity normalizer or a
-  disabled branch shows up in something you quote, either quote a smaller region or spend at
-  most one sentence turning it into a foreshadow of the module that activates it.
+implementation on the Source page for the curious. One corollary: **never show plotting
+or logging code on the main path** — colors, `semilogy` calls, and format strings teach
+nothing about the topic; the chart itself plus a one-clause "computed and logged by
+Section N's pass" citation carries all the provenance. (Inactive machinery is the same
+trap: a shared experiment class serving many variants is good design, but if a disabled
+branch shows up in something you quote, quote a smaller region or spend at most one
+sentence making it a foreshadow of the module that activates it.)
 
 **Technical topics teach through sample code, not just commands and prose.** For
 computing-related topics, a short code sample is often the clearest statement of a concept —
@@ -451,38 +427,47 @@ real reader flag):
   later.
 
 **Goal lines pose the question; they don't preprint the answer.** A measurement module's
-**Goal** (and its blurb on the landing page) should be inquiry-driven — what will be measured
-and what the measurement will decide — not a spoiler of the measured value. Real example:
-"measure the per-layer gradient cliff: a factor of ~0.1 per layer" hands over the punchline
-the module exists to let the reader discover (and kills the predict step). Better: "measure
-how much gradient survives at each layer, and use the measurements to decide whether the loss
-comes from saturation, weight scale, or their combination." The same goes for charts: **a
-figure shown in module N must not carry a later module's cure** (the fix's curve sitting next
-to the failure answers a question the reader hasn't asked yet). Render a solo variant of the
-figure for module N, show the comparison in the module that introduces the fix, and if you
-want the pull-forward, make it an explicit one-sentence teaser at the module's end ("next, the
-same measurement with X added").
+**Goal** and its landing blurb are inquiry ("measure how much gradient survives at each
+layer, and decide whether the loss comes from saturation, weight scale, or both"), never
+the punchline ("a factor of ~0.1 per layer" kills the discovery and the predict step).
+Figures too: a module's chart must not carry a later module's fix — render the solo
+variant now, show the comparison in the module that introduces the fix, and pull forward
+with at most a one-sentence teaser at the module's end.
 
-**Explain the load-bearing objects, not just name them.** Naming a term (in Module 0 or inline) is
-not the same as explaining how it *works*. If your argument's logic depends on how something
-*behaves* — an activation's derivative, a loss's gradient, a normalizer's effect, a data structure's
-invariant, a protocol's timing — then that behavior must be on the page **where it is first used**,
-even for advanced audiences and even if the object is "basic." Litmus test: for every function,
-operator, or component your explanation reasons about, ask *"does the reader need a specific property
-of this to follow my point?"* If yes, show that property (measured, like everything else, where you
-can). The classic failure is stating a conclusion — e.g. "gradients vanish because the sigmoid's
-slope is ≤ 0.25" — while never showing what the sigmoid is or why its slope is ≤ 0.25, leaving the
-reader to take the mechanism on faith. The audience level changes how *much* background to give,
-never *whether* the load-bearing property itself appears.
+**Show the work by hand — that is how intuition gets built.** Never present a result, a
+shape, or a name where the reader needed the worked steps. One principle, three common
+faces:
 
-A corollary: **a formula with a one-line gloss is still only naming.** BCE presented as
-`L = −[y ln p + (1−y)ln(1−p)]` plus "the negative log of the probability on the correct answer"
-was flagged by a real reader as "not really explained — a passing mention." Explaining a formula
-means walking why it has its shape: what need rules out the naive alternative (accuracy is a
-staircase with no slope to follow), what each piece does (the y and 1−y factors select the
-branch — say so explicitly), and worked values at the extremes (right = 0, shrug = ln 2,
-confidently wrong = unbounded). If the reader could not re-derive the formula's *purpose* after
-your paragraph, it was a mention, not an explanation.
+- **A mechanism produced a number or a new representation.** Work it out on the page:
+  the input, labeled and read aloud in plain words; every intermediate step small enough
+  to redo with a pencil; the output set against the input with the changes named. Data
+  needs that story to uncover its meaning: here is the data without the mechanism, here
+  it is with it, and the mechanism did X and Y. (Real flags from the attention workshop:
+  a blend "explained" by two multiplications in dense prose read as "terse and dense" —
+  the fix laid out the labeled input row, every weighted row, the column-by-column sum,
+  and a before/after: blending raised water and cut money, so "bank" now leans to the
+  river meaning. The same reader then had to ask how `weights @ X` actually runs,
+  because the page had named the matrix shapes but never worked the multiplication.)
+- **The argument leans on a property of some object** — an activation's derivative, a
+  loss's gradient, a data structure's invariant, a protocol's timing. Show that
+  property, worked or measured, where it is first used, however basic the object and
+  however advanced the audience. A formula with a one-line gloss is still only naming:
+  walk why it has its shape, what each piece does, and its values at the extremes.
+  (Real flag: BCE shown as the formula plus "the negative log of the probability on the
+  correct answer" was called "a passing mention"; the fix ruled out the naive
+  alternative, gave each factor its job, and worked the extremes — right = 0, shrug =
+  ln 2, confidently wrong = unbounded.)
+- **The explanation contains a "because".** Earn it: the plain-English reason, a small
+  worked example, then the formal statement. (Real flag: "backprop multiplies the
+  gradient by one factor per layer" was asserted cold; the fix developed the relay of
+  per-layer conversion rates, with a `0.2 x 0.1 = 0.02` worked example, before leaning
+  on the fact.)
+
+The intermediate numbers may be plain arithmetic derived from logged values (state the
+derivation, cite the logged inputs, note when rounding can drift the last digit against
+the logged output); no need to re-run the experiment and shift every downstream log
+citation. One litmus test covers all three faces: could the reader rebuild the claim
+from what is on the page with a pencil — or are they taking your word for it?
 
 **Verify the mechanism by measurement — don't repeat the textbook story on faith.** The whole
 point of a grounded workshop is that you can *check* the causal claim, not just the numbers. Before
@@ -495,76 +480,25 @@ one-line measurement showed the plain network's average slope was already 0.24, 
 maximum, *not* saturated. The real mechanism was scale-preservation across depth. Measuring the
 pre-activations is what surfaced the correct story.) When your mechanism claim depends on an
 internal quantity (a slope, a variance, a distribution, a rate), **print that quantity** and cite
-it like any other captured number. Two sharpenings, both from real reader pushback:
+it like any other captured number. Two sharpenings from real reader pushback: a mean can
+hide a tail, so when the argument is "not X", pair the average with a distribution
+statistic ("mean slope 0.242, units with slope < 0.05: 0.0%" closes the loophole the
+mean alone leaves open); and name metrics direction-neutrally (a column called
+`W shrink` confuses the first time a configuration amplifies — `W gain` lets the
+measured value say which way it goes).
 
-- **A mean can hide a tail.** When the argument is "not X" and the evidence is an average
-  ("mean slope 0.24, so not saturated"), also print a distribution statistic: the fraction of
-  units beyond a threshold, a min/median, or a histogram. "Mean slope 0.242, units with slope
-  < 0.05: 0.0%" closes the loophole the mean alone leaves open.
-- **Name metrics neutrally.** A column called `W shrink` presumes the value is below 1 and
-  confuses the reader the first time a configuration amplifies. Prefer direction-neutral
-  names (`W gain`, "RMS matrix gain") and let the measured value say which way it goes.
-
-**Develop the intuition for a mechanism — don't just assert it.** When a step in your explanation
-rests on *how* or *why* something works (not merely *that* it does), build the reader up to it
-instead of stating it as a fact to memorize. Assert-it-cold writing — "the gradient is multiplied
-at each layer", "the WAL is fsync'd before the commit returns", "the lock is dropped before the
-callback fires" — leaves a beginner nodding without understanding. Earn the claim: give the
-plain-English reason, an analogy or a small worked example, and *then* the formal statement. Litmus
-test: for every "because" and every mechanism your argument leans on, ask *"could a reader who has
-never seen this reconstruct why — or are they taking my word for it?"* If the latter, add the
-build-up. (Real example from the batch-norm workshop: an early draft asserted "backprop multiplies
-the gradient by one factor per layer"; the fix developed *why* the signal travels backward and
-*why* the chain rule makes it a product — a relay of per-layer "conversion rates" with a
-`0.2 × 0.1 = 0.02` worked example — *before* leaning on that fact.) This is the twin of the
-load-bearing-objects rule above: that one says show the *property*; this one says show the
-*reasoning* that uses it.
-
-**Corner the mechanism with failed attempts before you build it.** Naming the problem is not
-the same as making the reader feel why *this* mechanism is the answer. Before presenting a
-design (a blend, a cache, a lock, a normalizer), run the argument as attempts:
-
-1. State the problem as a concrete failure the reader can verify on real numbers.
-2. Show the **do-nothing counterfactual** — what happens *without* the mechanism — ideally as
-   a one-line logical or measured consequence ("the input row is identical in both sentences,
-   and identical inputs give identical outputs, so no downstream computation can ever recover
-   the context").
-3. Try the **naive simplest fix** first, worked out on the same real numbers, and let its
-   specific failure *name the requirement* the real design satisfies.
-4. Only then introduce the mechanism, which now arrives as the unique survivor of the
-   failures rather than as a gift from the author.
-
-(Real example, from reader feedback on the attention workshop: the weighted blend was
-introduced as "the simplest possible flow is averaging", and the reader asked why blend at
-all. The fix walked the chain: no mixing is *provably* context-blind; an equal average
-repairs that but pastes one sentence-summary vector over every word and gives filler words a
-full share; those two failures force exactly per-word, relevance-weighted mixing — which is
-what attention is.) Two placement notes: the mechanism's *name* belongs at this moment too —
-once the requirement is on the table, "those per-word mixing weights are the *attention*"
-lands as a summary instead of jargon — and the naive attempt is a natural predict moment
-("one problem gets fixed and a new one appears; name both before reading on").
-
-**Show the work by hand — that is how intuition gets built.** Never present a result, a
-shape, or a name where the reader needed the worked steps. Whenever a mechanism produces
-a number or a new representation, work it out on the page, by hand: the input, labeled
-and read aloud in plain words; every intermediate step small enough to redo with a
-pencil; and the output set against the input with the changes named. Data needs that
-story to uncover its meaning: here is the data without the mechanism, here it is with
-it, and the mechanism did X and Y.
-
-(Two real reader flags from the attention workshop, both this one gap. The blend's
-payoff traced just two multiplications in a dense paragraph and read as "terse and
-dense"; the fix worked the whole thing by hand — bank's labeled input row, every
-weighted row, the column-by-column sum, then a before/after with the changes named:
-blending raised water and cut money, so "bank" now leans to the river meaning. Later the
-same reader had to ask how `weights @ X` actually runs, because the page had named the
-matrix shapes but never worked the multiplication itself by hand.)
-
-The intermediate numbers may be plain arithmetic derived from logged values (state the
-derivation, cite the logged inputs, note when rounding can drift the last digit against
-the logged output); no need to re-run the experiment and shift every downstream log
-citation. The litmus test is the whole rule: could the reader rebuild the output from
-the input with a pencil, using only what is on the page?
+**Corner the mechanism with failed attempts before you build it.** A design (a blend, a
+cache, a lock, a normalizer) should arrive as the survivor of failures the reader
+watched, not as a gift from the author. The usual shape: the do-nothing counterfactual
+fails first, then a naive simplest fix whose specific failure names the requirement, and
+only then the mechanism — which is also the moment to give it its name ("those per-word
+mixing weights are the *attention*" lands as a summary instead of jargon), and a natural
+predict moment ("one problem gets fixed and a new one appears; name both before reading
+on"). (Real flag: the weighted blend introduced as "the simplest possible flow is
+averaging" made a reader ask why blend at all; the fix walked the chain — no mixing is
+provably context-blind; an equal average repairs that but pastes one sentence-summary
+vector over every word; those failures force exactly per-word, relevance-weighted
+mixing, which is what attention is.)
 
 ### 4. Add diagrams
 
@@ -844,8 +778,7 @@ If you keep your workshops in a git repo, commit the `<slug>/` directory like an
 | Captures | Citation names the producing script + section | "(captured in foo.log)" with no producer |
 | Teaching path | Minimal lesson-serving snippets; harness behind optional sections | Framework `forward()` + plotting loops on the main path |
 | Sample code | Verbatim script excerpts, or runnable snippets with captured output | Pseudo-code passing as real; snippet output never actually run |
-| Core result | Designed table, one quantity at a time, ratios framed | Nine-column log dump as the primary presentation |
-| Payoff data | Told as a story: before, each contribution, the sum, after, changes named | Log dump plus two multiplications in dense prose |
+| Core result | Designed table on one worked datum: quantities one at a time, contributions and sum visible, before/after with changes named | Nine-column log dump, or two scalar products in dense prose |
 | Overview / previews | Outcomes in the reader's starting vocabulary | Leans on concepts a later module introduces |
 | Diagrams | Explain the mental model; type fits the relationship (sequence for time-order, histogram for distributions) | Decorate; restate the prose; block diagram for everything |
 | Quizzes | Test reasoning | Test trivia / surface recall |
@@ -893,10 +826,6 @@ Two shapes work well; pick per the Phase 0 style answer:
 - **Don't hand over a mechanism the problem hasn't forced yet.** "The fix is X" arriving
   before the reader has watched the do-nothing counterfactual and the naive attempt fail
   reads as a gift from the author; corner the design with failed attempts first (see step 3).
-- **Don't compress a transformation into scalar highlights in prose.** If the payoff is
-  "X became Y", tell the before/after story with every contribution and the visible sum
-  in a table; a paragraph tracing one or two products through the blend is provenance,
-  not teaching (see the show-the-work-by-hand rule in step 3).
 - **Don't spoil the discovery.** Goal lines and landing-page blurbs pose the question rather
   than quoting the measured punchline, and a module's figures must not carry a later module's
   fix (teaser sentence at the end instead; see step 3).
