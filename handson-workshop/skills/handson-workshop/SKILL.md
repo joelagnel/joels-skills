@@ -220,8 +220,8 @@ Copy `assets/workshop-template.md` to `WORKSHOP.md` and fill it in. Module struc
 
 **Goal.** One sentence.
 **Setup.** What state the system should be in.
-**Commands.** Exact lines to copy.
-**Expected output.** Verbatim — cite source: (Captured in `captures/foo.log` line NN.)
+**Commands.** Exact lines to copy, a `#` comment above each step.
+**Expected output.** Verbatim (cross-check: `captures/foo.log` lines NN-MM).
 
 (Best-fit diagram if it explains the model better than prose — see step 4.
 Sample code if the concept manifests in code — see the sample-code rule below.)
@@ -233,6 +233,19 @@ Sample code if the concept manifests in code — see the sample-code rule below.
 
 Let the Phase 0 depth rubric drive the module count. Place all answer keys in a single section at
 the end.
+
+**Command blocks and transcripts read as a narrated session, never a wall.** Two formatting
+rules, both real reader flags:
+
+- In a **Commands** block, precede each command (or tight group) with a one-line `#` comment
+  saying what it does and why it comes next, with a blank line between steps — the same
+  annotated-walkthrough style the experiment script uses.
+- Never present one long interleaved transcript as the Expected output for many commands.
+  Split it into one fenced block per command or small step — each still a verbatim,
+  contiguous slice of the capture — with its introducing comment or sentence between blocks,
+  so every output sits directly under the command that produced it, with room to breathe.
+  (Real flag: a six-command git session shown as one bare Commands wall plus one
+  interleaved forty-line Expected-output wall was called "hard to follow".)
 
 **Every capture arrives as code, output, walkthrough — and the page stands alone.** A
 capture teaches only when the reader can see what ran, what came out, and what the

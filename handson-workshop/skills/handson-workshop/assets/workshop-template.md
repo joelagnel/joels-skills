@@ -79,16 +79,27 @@ If a term is so central it'll be re-introduced inline in a module, that's fine �
 ### Commands
 
 ```bash
-{{actual commands a learner copies}}
+# {{what this step does, and why it comes next}}
+{{command 1}}
+
+# {{what the next step does}}
+{{command 2}}
 ```
 
 ### Expected output
 
+{{One short fenced block per command or small step — never one interleaved transcript for
+the whole Commands list. Introduce each block with a sentence or reuse its comment.}}
+
 ```
-{{verbatim output captured from a real run}}
+{{verbatim output of command 1, captured from a real run}}
 ```
 
-(Captured in [`captures/module-1.log`](captures/module-1.log), lines NN-MM.)
+```
+{{verbatim output of command 2}}
+```
+
+(cross-check: `captures/module-1.log` lines NN-MM)
 
 Notice that {{specific observation}} — this is what makes {{concept}} work.
 
