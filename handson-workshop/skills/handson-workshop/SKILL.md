@@ -612,7 +612,11 @@ content column it looks absurd and its own text balloons. The HTML generators ha
 diagrams normally (`rsvg-convert -w 1500`) and let the generator shrink the *display* size — no
 manual width juggling. Wide diagrams (charts, most architectures) are untouched and still fill the
 column. When you screenshot to verify, confirm portrait diagrams render compact (not column-width)
-and their text stays legible at the cap.
+and their text stays legible at the cap. For a diagram that reads blown-up at column width but
+falls under the portrait threshold, set an explicit display width in the markdown:
+`![alt](diagrams/foo.png){: width="540" }` — both generators enable python-markdown's `extra`
+(attr_list), and the stylesheet's `max-width: 100%` respects the attribute. Pick the width so the
+on-screen text lands near body size (display width ≈ natural SVG width × 16 / font-size-pt).
 
 Diagrams should **explain the model**, not decorate. If a paragraph already conveys the idea, skip
 the diagram.
