@@ -225,33 +225,34 @@ Sample code if the concept manifests in code — see the sample-code rule below.
 Let the Phase 0 depth rubric drive the module count. Place all answer keys in a single section at
 the end.
 
-**Every capture arrives as code, output, walkthrough — with its provenance told in
-prose.** A capture teaches only when the reader can see what ran, what came out, and
-what the numbers say:
+**Every capture arrives as code, output, walkthrough — and the page stands alone.** A
+capture teaches only when the reader can see what ran, what came out, and what the
+numbers say, without leaving the page: many readers are on a phone where the script and
+log pages might as well not exist.
 
 1. **The code that emits it** — the exact lines, including the `print`/`log` calls that
    write the output shown; a snippet that merely computes related values, followed by
-   output none of the shown lines print, breaks the chain of custody. Introduce the
-   block by naming its producer inside the flowing sentence, not in a trailing
-   parenthetical: which pass of the script (a readable phrase hyperlinked to the source
-   page, never a bare bracket code the reader must decode cold), what that pass does in
-   one clause, and which log lines it writes.
+   output none of the shown lines print, breaks the chain of custody. Introduce it as
+   the reader's eyes doing the executing ("the script computes these four dot products,
+   spelling the first out term by term:"), never as a pointer to where the output lives.
 2. **The output, verbatim.**
 3. **A "let's go deeper" walkthrough** that reads the key figures aloud: what each
    column or field means, and which value the argument turns on.
 
-(Real before/after from review. Weak: a dataset-generation snippet, then "samples: 1000
-(500 per class)... (Captured in captures/results.log lines 8-10.)" — the shown code
-never prints those lines, the citation points at a file the reader cannot browse, and
-the numbers are left to speak for themselves. Fixed: "Section 1's pass then shuffles,
-holds out a test set, and logs the dataset's vital signs; these `log(...)` lines write
-the capture below, at lines 8-10:", then the actual logging lines, the output, then
-"Let's go deeper: 1,000 points, perfectly balanced at 500 per class, so 50% accuracy is
-exactly the coin-flip baseline; 200 held out, so every accuracy quoted is on data the
-network never saw.")
+Provenance is optional verification, never load-bearing. Cite it as a compact trailing
+parenthetical in one fixed shape — "(cross-check: [results.log lines 8-10](...))" — at
+the end of the introducing sentence or after the block. Do not weave log-line numbers or
+script-section names into the sentence's flow ("the pass logs that matrix at lines
+29-34" makes the log required reading; the real reader flag was "what log is this?"),
+and every value the prose reasons with must itself appear on the page, not behind the
+link. (Real weak/fixed pair from review: the weak version showed a dataset-generation
+snippet, output that code never prints, and "(Captured in captures/results.log lines
+8-10.)" pointing at a file the reader cannot browse; the fix showed the actual logging
+lines, the output, the walkthrough, and reduced the log reference to a trailing
+cross-check.)
 
 The bar: a reader should never meet a number without knowing what ran to produce it and
-what it is telling them.
+what it is telling them — and never need a second page open to follow the first.
 
 **Quoted snippets are verbatim, or explicitly abridged — never paraphrased.** Readers copy
 snippets and diff them against the source, so every code fence must match the script
@@ -280,8 +281,8 @@ snippet that runs the measurement (often 3–5 lines), put the PyTorch/tool mech
 collapsible optional section as a labeled minimal-essence illustration, and link the full
 implementation on the Source page for the curious. One corollary: **never show plotting
 or logging code on the main path** — colors, `semilogy` calls, and format strings teach
-nothing about the topic; the chart itself plus a one-clause "computed and logged by
-Section N's pass" citation carries all the provenance. (Inactive machinery is the same
+nothing about the topic; the chart itself plus a trailing "(cross-check: results.log
+lines N-M)" note carries all the provenance. (Inactive machinery is the same
 trap: a shared experiment class serving many variants is good design, but if a disabled
 branch shows up in something you quote, quote a smaller region or spend at most one
 sentence making it a foreshadow of the module that activates it.)
@@ -639,6 +640,10 @@ math (`pip install latex2mathml`). It produces a self-contained `WORKSHOP.html`
 beside the markdown file with:
 
 - **Sticky sidebar** ToC with JS scroll-position highlighting (h2 + h3 headings)
+- **Color themes** — five fixed palettes (aurora, the vivid dark default; midnight and
+  synthwave, also dark; paper and sepia, light) selected from a swatch picker in the
+  sidebar and persisted in `localStorage['handson-theme']`; printing pins paper, and the
+  exam template follows the same saved choice
 - **Quiz sections** rendered as blue callout boxes
 - **Answer key sections** wrapped in collapsible `<details>` (click to reveal)
 - **Optional deep-dive sections** — any h3/h4 with an explicit `{#optional--<slug>}` anchor
@@ -710,11 +715,10 @@ Notes specific to the wiki shape:
   static hosts and portals frequently 404 them. Instead render BOTH artifacts as wiki pages:
   the experiment script (a one-paragraph frame with the run command and determinism note, then
   one fenced block with the full script; nav e.g. "Source · experiment.py") and the captured
-  log (nav e.g. "Log · results.log") with **line numbers prefixed** so the modules' "lines
-  25 and 29" citations can be looked up directly. Link every prose mention of either artifact
-  to its page — a line-number citation with no browsable target reads as random. Keep both
-  regenerable: a tiny helper that rewrites the markdown from the real files beats
-  hand-copying, which drifts.
+  log (nav e.g. "Log · results.log") with **line numbers prefixed** so the modules'
+  "(cross-check: results.log lines 25-29)" notes can be looked up directly — a line-number
+  reference with no browsable target reads as random. Keep both regenerable: a tiny helper
+  that rewrites the markdown from the real files beats hand-copying, which drifts.
 - `index.md` is read first: it must pass the overview-vocabulary rule from step 3 — punchlines
   phrased as outcomes, no reliance on terms the modules will introduce.
 
@@ -731,7 +735,10 @@ no external deps) with auto-grading:
 - Replace the `{{TOPIC}}` placeholder in the title.
 
 Weight the exam per the Phase 0 depth rubric (recall for Beginner; application/analysis for
-Advanced).
+Advanced). Questions test reasoning, never recall of measured decimals: a numeric text
+answer is fair only when it is simple and trivially derivable from understanding (1/4, 10,
+1 — never a 0.435 the reader would have to memorize from a table). The template's grader
+matches numeric answers by value, so 0.25, .25, and 1/4 all pass against "0.25".
 
 ### 7. Cross-link
 
@@ -779,7 +786,7 @@ If you keep your workshops in a git repo, commit the `<slug>/` directory like an
 | Depth | Matched to the level the interview *and* diagnostic questions measured | One-size-fits-all, or trusting self-report blindly |
 | Prerequisites | Confirmed installed (or gaps surfaced) before drafting | Commands the author can't actually run |
 | Commands | Real captured output, cited to a file | Invented / handwave output |
-| Captures | Citation names the producing script + section | "(captured in foo.log)" with no producer |
+| Captures | Everything inline; trailing "(cross-check: log lines N-M)" | Values behind links; log lines woven into sentence flow |
 | Teaching path | Minimal lesson-serving snippets; harness behind optional sections | Framework `forward()` + plotting loops on the main path |
 | Sample code | Verbatim script excerpts, or runnable snippets with captured output | Pseudo-code passing as real; snippet output never actually run |
 | Core result | Designed table on one worked datum: quantities one at a time, contributions and sum visible, before/after with changes named | Nine-column log dump, or two scalar products in dense prose |

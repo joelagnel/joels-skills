@@ -133,6 +133,7 @@ def build_wiki_sidebar(pages, current_slug, soup, title):
     return (
         '<div id="sidebar">\n'
         f'  <div class="sidebar-label">{title}</div>\n'
+        f'{whg.theme_picker_html()}'
         f'  <nav>\n    {nav_html}\n  </nav>\n'
         '</div>\n'
     )
@@ -191,6 +192,7 @@ def render_page(page, idx, pages, content_dir, out_dir, title,
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
 <title>{doc_title}</title>
+<script>{whg.THEME_HEAD_JS}</script>
 <style>
 {pico_css}
 

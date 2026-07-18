@@ -53,139 +53,102 @@ from pygments.styles import get_style_by_name
 PICO_CSS_PATH = Path(__file__).parent / 'pico.classless.min.css'
 
 
-# Custom palette overrides (Pico's CSS variables), keep colors close to the
-# old hand-rolled theme. Pico exposes ~80 vars; we only override the ones that
-# matter for our visual identity.
-PICO_OVERRIDES = """
-/* ──────────────────────────────────────────────────────────────────────────
-   Theme variables. We support both light and dark mode via prefers-color-
-   scheme (Pico's same mechanism). Two layers:
+# ── Themes ───────────────────────────────────────────────────────────────────
+# Five fixed themes, selectable from the sidebar swatch picker and persisted
+# in localStorage['handson-theme']. Each theme is permanently dark or light —
+# there are no per-theme dark-mode variants. 'aurora' (vivid dark) is the
+# default. Variables are emitted as [data-theme=X] blocks over one shared set
+# of names; a tiny inline <head> script applies the saved theme before first
+# paint (no flash), and printing always pins the 'paper' palette.
 
-     :root, [data-theme=light]               → light mode (default)
-     @media (prefers-color-scheme: dark)
-       :root:not([data-theme=light])         → dark mode (auto)
-     [data-theme=dark]                       → dark mode (explicit)
+# name, picker label, swatch background, swatch dot (accent)
+THEMES = [
+    ('aurora',    'Aurora (vivid dark, default)', '#0d0b1e',
+     'linear-gradient(135deg,#22d3ee,#f472b6)'),
+    ('midnight',  'Midnight (dark)',              '#0b1220', '#60a5fa'),
+    ('synthwave', 'Synthwave (dark)',             '#16072b',
+     'linear-gradient(135deg,#ff6ad5,#00e5ff)'),
+    ('paper',     'Paper (light)',                '#eef2f7', '#2563eb'),
+    ('sepia',     'Sepia (light)',                '#f3ecdd', '#b45309'),
+]
 
-   This means iOS in dark mode automatically gets dark theme, but a user can
-   force either theme by adding data-theme="light" or "dark" on <html>.
-   ────────────────────────────────────────────────────────────────────────── */
+# Runs in <head>, before the stylesheet paints.
+THEME_HEAD_JS = (
+    "(function(){var t='aurora';"
+    "try{t=localStorage.getItem('handson-theme')||t;}catch(e){}"
+    "document.documentElement.setAttribute('data-theme',t);})();"
+)
 
-:root, [data-theme=light] {
-  /* Map our palette onto Pico's classless variables. */
-  --pico-primary:                       #2563eb;
-  --pico-primary-hover:                 #1d4ed8;
-  --pico-primary-focus:                 rgba(37, 99, 235, 0.25);
-  --pico-primary-inverse:               #ffffff;
-  --pico-text-decoration:               none;
 
-  /* Pull Pico's body and heading colors firmly to our dark-text values
-     so contrast is high regardless of Pico's defaults. */
-  --pico-color:                         #1e293b;
-  --pico-h1-color:                      #0f172a;
-  --pico-h2-color:                      #0f172a;
-  --pico-h3-color:                      #0f172a;
-  --pico-h4-color:                      #1e293b;
-  --pico-muted-color:                   #475569;
+def theme_picker_html():
+    """Swatch-row widget for the sidebar (one button per theme)."""
+    btns = '\n    '.join(
+        f'<button type="button" class="theme-swatch" data-theme-pick="{name}" '
+        f'title="{label}" aria-label="{label}" style="background:{bg}">'
+        f'<span class="dot" style="background:{dot}"></span></button>'
+        for name, label, bg, dot in THEMES)
+    return ('  <div class="theme-picker" role="group" aria-label="Color theme">\n'
+            f'    {btns}\n  </div>\n')
 
-  /* Fluid typography: scales smoothly across viewports without breakpoints.
-     ~17 px on phones, up to ~19 px on wide displays. */
-  --pico-font-size:                     clamp(1rem, 0.92rem + 0.4vw, 1.1875rem);
-  --pico-line-height:                   1.65;
 
-  /* Page palette (light mode) */
-  --bg:              #eef2f7;
-  --surface:         #ffffff;
-  --sidebar-bg:      #18243f;
-  --sidebar-text:    #8aafd0;
-  --sidebar-head:    #ccddf5;
-  --sidebar-active:  #60a5fa;
-  --sidebar-hover:   rgba(255,255,255,.06);
-  --text:            #1e293b;
-  --text-muted:      #475569;
-  --heading:         #0f172a;
-  --accent:          #2563eb;
-  --accent2:         #0891b2;
-  --code-bg:         #0d1117;
+_AURORA_VARS = """\
+  color-scheme: dark;
+  --pico-primary:        #22d3ee;
+  --pico-primary-hover:  #67e8f9;
+  --pico-primary-focus:  rgba(34, 211, 238, 0.3);
+  --pico-primary-inverse:#08303a;
+  --pico-color:          #e6e4f5;
+  --pico-h1-color:       #f5f3ff;
+  --pico-h2-color:       #c4b5fd;
+  --pico-h3-color:       #93c5fd;
+  --pico-h4-color:       #e6e4f5;
+  --pico-muted-color:    #a5a0c8;
+  --bg:              #0d0b1e;
+  --surface:         #171432;
+  --sidebar-bg:      #100d24;
+  --sidebar-text:    #9d97c9;
+  --sidebar-head:    #e9d5ff;
+  --sidebar-active:  #f0abfc;
+  --sidebar-hover:   rgba(255,255,255,.07);
+  --text:            #e6e4f5;
+  --text-muted:      #a5a0c8;
+  --heading:         #f5f3ff;
+  --accent:          #22d3ee;
+  --accent2:         #f472b6;
+  --code-bg:         #0a0818;
   --code-fg:         #e6edf3;
-  --code-border:     #21262d;
-  --ic-bg:           #dbeafe;
-  --ic-fg:           #1e40af;
-  --quiz-bg:         #eff6ff;
-  --quiz-border:     #3b82f6;
-  --quiz-text-link-bg: #e0f2fe;
-  --ans-border:      #16a34a;
-  --ans-sum-bg:      #dcfce7;
-  --ans-sum-text:    #14532d;
-  --ans-body-bg:     #f0fdf4;
-  --opt-border:      #7c3aed;
-  --opt-sum-bg:      #ede9fe;
-  --opt-sum-text:    #4c1d95;
-  --opt-body-bg:     #f5f3ff;
-  --border:          #e2e8f0;
-  --table-row-hover: var(--quiz-bg);
-  --meta-bg:         #f8faff;
-  --shadow:          0 1px 4px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
-}
+  --code-border:     #2a2450;
+  --ic-bg:           #2b1f4d;
+  --ic-fg:           #d8b4fe;
+  --quiz-bg:         #0e2233;
+  --quiz-border:     #22d3ee;
+  --quiz-text-link-bg: #164e63;
+  --ans-border:      #a3e635;
+  --ans-sum-bg:      #1d2e10;
+  --ans-sum-text:    #d9f99d;
+  --ans-body-bg:     #131f0b;
+  --opt-border:      #fbbf24;
+  --opt-sum-bg:      #33260b;
+  --opt-sum-text:    #fde68a;
+  --opt-body-bg:     #241b08;
+  --border:          #2b2650;
+  --table-row-hover: #1b1740;
+  --meta-bg:         #171432;
+  --shadow:          0 2px 8px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.35);
+"""
 
-/* Auto dark mode: applies whenever the OS prefers dark and the user
-   hasn't explicitly forced light via data-theme="light". */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme=light]) {
-    --pico-color:                       #e2e8f0;
-    --pico-h1-color:                    #f1f5f9;
-    --pico-h2-color:                    #f1f5f9;
-    --pico-h3-color:                    #cbd5e1;
-    --pico-h4-color:                    #e2e8f0;
-    --pico-muted-color:                 #94a3b8;
-    --pico-primary:                     #60a5fa;
-    --pico-primary-hover:               #93c5fd;
-
-    --bg:              #0b1220;       /* almost-black navy, less harsh than pure black */
-    --surface:         #131c2e;       /* card surface, lighter than body for separation */
-    --sidebar-bg:      #0d1422;       /* slightly darker than body */
-    --sidebar-text:    #94a3b8;
-    --sidebar-head:    #cbd5e1;
-    --sidebar-active:  #93c5fd;
-    --sidebar-hover:   rgba(255,255,255,.06);
-    --text:            #e2e8f0;
-    --text-muted:      #94a3b8;
-    --heading:         #f1f5f9;
-    --accent:          #60a5fa;       /* brighter on dark */
-    --accent2:         #22d3ee;
-    --code-bg:         #060a13;       /* a hair darker than the body */
-    --code-fg:         #e6edf3;
-    --code-border:     #1e2a3d;
-    --ic-bg:           #1e3a5f;       /* inline-code background */
-    --ic-fg:           #bfdbfe;
-    --quiz-bg:         #122236;
-    --quiz-border:     #3b82f6;
-    --quiz-text-link-bg: #1e3a5f;
-    --ans-border:      #4ade80;
-    --ans-sum-bg:      #143124;
-    --ans-sum-text:    #bbf7d0;
-    --ans-body-bg:     #0d1f17;
-    --opt-border:      #a78bfa;
-    --opt-sum-bg:      #251b3f;
-    --opt-sum-text:    #ddd6fe;
-    --opt-body-bg:     #16112a;
-    --border:          #243049;
-    --table-row-hover: #1a253c;
-    --meta-bg:         #131c2e;
-    --shadow:          0 2px 8px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
-  }
-}
-
-/* Explicit dark theme: applies when user/site forces data-theme="dark". */
-[data-theme=dark] {
-  --pico-color:                       #e2e8f0;
-  --pico-h1-color:                    #f1f5f9;
-  --pico-h2-color:                    #f1f5f9;
-  --pico-h3-color:                    #cbd5e1;
-  --pico-h4-color:                    #e2e8f0;
-  --pico-muted-color:                 #94a3b8;
-  --pico-primary:                     #60a5fa;
-  --pico-primary-hover:               #93c5fd;
-
+_MIDNIGHT_VARS = """\
+  color-scheme: dark;
+  --pico-primary:        #60a5fa;
+  --pico-primary-hover:  #93c5fd;
+  --pico-primary-focus:  rgba(96, 165, 250, 0.28);
+  --pico-primary-inverse:#0b1220;
+  --pico-color:          #e2e8f0;
+  --pico-h1-color:       #f1f5f9;
+  --pico-h2-color:       #f1f5f9;
+  --pico-h3-color:       #cbd5e1;
+  --pico-h4-color:       #e2e8f0;
+  --pico-muted-color:    #94a3b8;
   --bg:              #0b1220;
   --surface:         #131c2e;
   --sidebar-bg:      #0d1422;
@@ -218,11 +181,188 @@ PICO_OVERRIDES = """
   --table-row-hover: #1a253c;
   --meta-bg:         #131c2e;
   --shadow:          0 2px 8px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);
-}
+"""
 
+_SYNTHWAVE_VARS = """\
+  color-scheme: dark;
+  --pico-primary:        #ff6ad5;
+  --pico-primary-hover:  #ff8fe0;
+  --pico-primary-focus:  rgba(255, 106, 213, 0.3);
+  --pico-primary-inverse:#33041f;
+  --pico-color:          #f3e8ff;
+  --pico-h1-color:       #ffffff;
+  --pico-h2-color:       #f0abfc;
+  --pico-h3-color:       #67e8f9;
+  --pico-h4-color:       #f3e8ff;
+  --pico-muted-color:    #b795e0;
+  --bg:              #16072b;
+  --surface:         #22103f;
+  --sidebar-bg:      #120524;
+  --sidebar-text:    #b795e0;
+  --sidebar-head:    #fbcfe8;
+  --sidebar-active:  #00e5ff;
+  --sidebar-hover:   rgba(255,255,255,.08);
+  --text:            #f3e8ff;
+  --text-muted:      #b795e0;
+  --heading:         #ffffff;
+  --accent:          #ff6ad5;
+  --accent2:         #00e5ff;
+  --code-bg:         #0d0318;
+  --code-fg:         #e6edf3;
+  --code-border:     #3b1a63;
+  --ic-bg:           #3b1a63;
+  --ic-fg:           #f5d0fe;
+  --quiz-bg:         #131046;
+  --quiz-border:     #00e5ff;
+  --quiz-text-link-bg: #1e1b64;
+  --ans-border:      #4ade80;
+  --ans-sum-bg:      #0c2d1c;
+  --ans-sum-text:    #bbf7d0;
+  --ans-body-bg:     #081f14;
+  --opt-border:      #ffd166;
+  --opt-sum-bg:      #33260b;
+  --opt-sum-text:    #ffe9a8;
+  --opt-body-bg:     #241b08;
+  --border:          #3b2a63;
+  --table-row-hover: #2a1650;
+  --meta-bg:         #22103f;
+  --shadow:          0 2px 8px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.35);
+"""
+
+_PAPER_VARS = """\
+  color-scheme: light;
+  --pico-primary:        #2563eb;
+  --pico-primary-hover:  #1d4ed8;
+  --pico-primary-focus:  rgba(37, 99, 235, 0.25);
+  --pico-primary-inverse:#ffffff;
+  --pico-color:          #1e293b;
+  --pico-h1-color:       #0f172a;
+  --pico-h2-color:       #0f172a;
+  --pico-h3-color:       #0f172a;
+  --pico-h4-color:       #1e293b;
+  --pico-muted-color:    #475569;
+  --bg:              #eef2f7;
+  --surface:         #ffffff;
+  --sidebar-bg:      #18243f;
+  --sidebar-text:    #8aafd0;
+  --sidebar-head:    #ccddf5;
+  --sidebar-active:  #60a5fa;
+  --sidebar-hover:   rgba(255,255,255,.06);
+  --text:            #1e293b;
+  --text-muted:      #475569;
+  --heading:         #0f172a;
+  --accent:          #2563eb;
+  --accent2:         #0891b2;
+  --code-bg:         #0d1117;
+  --code-fg:         #e6edf3;
+  --code-border:     #21262d;
+  --ic-bg:           #dbeafe;
+  --ic-fg:           #1e40af;
+  --quiz-bg:         #eff6ff;
+  --quiz-border:     #3b82f6;
+  --quiz-text-link-bg: #e0f2fe;
+  --ans-border:      #16a34a;
+  --ans-sum-bg:      #dcfce7;
+  --ans-sum-text:    #14532d;
+  --ans-body-bg:     #f0fdf4;
+  --opt-border:      #7c3aed;
+  --opt-sum-bg:      #ede9fe;
+  --opt-sum-text:    #4c1d95;
+  --opt-body-bg:     #f5f3ff;
+  --border:          #e2e8f0;
+  --table-row-hover: var(--quiz-bg);
+  --meta-bg:         #f8faff;
+  --shadow:          0 1px 4px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+"""
+
+_SEPIA_VARS = """\
+  color-scheme: light;
+  --pico-primary:        #b45309;
+  --pico-primary-hover:  #92400e;
+  --pico-primary-focus:  rgba(180, 83, 9, 0.25);
+  --pico-primary-inverse:#ffffff;
+  --pico-color:          #3f3226;
+  --pico-h1-color:       #2a2118;
+  --pico-h2-color:       #2a2118;
+  --pico-h3-color:       #4a3a2b;
+  --pico-h4-color:       #3f3226;
+  --pico-muted-color:    #6b5a48;
+  --bg:              #f3ecdd;
+  --surface:         #fbf6ea;
+  --sidebar-bg:      #3d2f23;
+  --sidebar-text:    #cbb49a;
+  --sidebar-head:    #f0e3d0;
+  --sidebar-active:  #f59e0b;
+  --sidebar-hover:   rgba(255,255,255,.06);
+  --text:            #3f3226;
+  --text-muted:      #6b5a48;
+  --heading:         #2a2118;
+  --accent:          #b45309;
+  --accent2:         #0f766e;
+  --code-bg:         #241c14;
+  --code-fg:         #ede0d0;
+  --code-border:     #3a2e22;
+  --ic-bg:           #ecdcc3;
+  --ic-fg:           #7c4a03;
+  --quiz-bg:         #f6ecd9;
+  --quiz-border:     #b45309;
+  --quiz-text-link-bg: #efe0c5;
+  --ans-border:      #4d7c0f;
+  --ans-sum-bg:      #e8f0d8;
+  --ans-sum-text:    #365314;
+  --ans-body-bg:     #f2f7e8;
+  --opt-border:      #7e22ce;
+  --opt-sum-bg:      #f0e5f7;
+  --opt-sum-text:    #581c87;
+  --opt-body-bg:     #f7f1fb;
+  --border:          #e0d3bd;
+  --table-row-hover: #f1e7d2;
+  --meta-bg:         #f8f2e4;
+  --shadow:          0 1px 4px rgba(60,40,10,.1), 0 1px 2px rgba(60,40,10,.06);
+"""
+
+THEME_CSS = (
+    "/* ── Themes: one variable set, five fixed palettes ─────────────────── */\n"
+    ":root {\n"
+    "  --pico-text-decoration: none;\n"
+    "  /* Fluid typography: ~17 px on phones up to ~19 px on wide displays. */\n"
+    "  --pico-font-size:   clamp(1rem, 0.92rem + 0.4vw, 1.1875rem);\n"
+    "  --pico-line-height: 1.65;\n"
+    "}\n\n"
+    ":root, [data-theme=aurora] {\n" + _AURORA_VARS + "}\n\n"
+    "[data-theme=midnight] {\n" + _MIDNIGHT_VARS + "}\n\n"
+    "[data-theme=synthwave] {\n" + _SYNTHWAVE_VARS + "}\n\n"
+    "[data-theme=paper] {\n" + _PAPER_VARS + "}\n\n"
+    "[data-theme=sepia] {\n" + _SEPIA_VARS + "}\n\n"
+    "/* Printing always uses the paper palette, whatever theme is active. */\n"
+    "@media print {\n  :root {\n" + _PAPER_VARS + "  }\n}\n\n"
+    "/* ── Theme picker (sidebar swatches) ───────────────────────────────── */\n"
+    ".theme-picker {\n"
+    "  display: flex; gap: .5rem; align-items: center;\n"
+    "  padding: .15rem 1.25rem .7rem;\n"
+    "}\n"
+    ".theme-picker .theme-swatch {\n"
+    "  width: 21px; height: 21px; border-radius: 50%;\n"
+    "  border: 2px solid rgba(255,255,255,.28);\n"
+    "  padding: 0; margin: 0; cursor: pointer; position: relative;\n"
+    "  flex: 0 0 auto; box-shadow: none;\n"
+    "}\n"
+    ".theme-picker .theme-swatch .dot {\n"
+    "  position: absolute; inset: 4px; border-radius: 50%; display: block;\n"
+    "}\n"
+    ".theme-picker .theme-swatch.sel {\n"
+    "  border-color: var(--sidebar-active);\n"
+    "  transform: scale(1.12);\n"
+    "}\n"
+    "@media print { .theme-picker { display: none !important; } }\n"
+)
+
+# Custom palette overrides (Pico's CSS variables), layered on the theme
+# blocks above. Pico exposes ~80 vars; we only override the ones that matter
+# for our visual identity.
+PICO_OVERRIDES = THEME_CSS + """
 html {
   scroll-behavior: smooth;
-  color-scheme: light dark;        /* native widgets follow OS theme */
   scroll-padding-top: .5rem;       /* nicer landing for anchor links */
 }
 
@@ -824,6 +964,24 @@ SIDEBAR_JS = r"""
   if (toggle)  toggle.addEventListener('click', openSidebar);
   if (overlay) overlay.addEventListener('click', closeSidebar);
 
+  // ── Theme picker ───────────────────────────────────────────────────────
+  var swatches = Array.from(sidebar.querySelectorAll('.theme-swatch'));
+  function markTheme() {
+    var cur = document.documentElement.getAttribute('data-theme') || 'aurora';
+    swatches.forEach(function (b) {
+      b.classList.toggle('sel', b.getAttribute('data-theme-pick') === cur);
+    });
+  }
+  swatches.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = b.getAttribute('data-theme-pick');
+      document.documentElement.setAttribute('data-theme', t);
+      try { localStorage.setItem('handson-theme', t); } catch (e) {}
+      markTheme();
+    });
+  });
+  markTheme();
+
   // ── Scroll-position highlight ──────────────────────────────────────────
   var links = Array.from(sidebar.querySelectorAll('nav a'));
   var targets = links.map(function (a) {
@@ -1154,6 +1312,7 @@ def build_sidebar(soup):
     return (
         '<div id="sidebar">\n'
         '  <div class="sidebar-label">Contents</div>\n'
+        f'{theme_picker_html()}'
         f'  <nav>\n    {nav}  </nav>\n'
         '</div>\n'
     )
@@ -1351,6 +1510,7 @@ def convert(md_path: Path, out_path: Path, embed_img: bool = True):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
 <title>{title_text}</title>
+<script>{THEME_HEAD_JS}</script>
 <style>
 /* ── Pico.css 2.x (classless base, MIT licensed) ─────────────────────────── */
 {pico_css}
