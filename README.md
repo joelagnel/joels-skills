@@ -86,6 +86,9 @@ Each skill installs into `$CODEX_HOME/skills/` (default `~/.codex/skills/`), nam
 basename — so `handson-workshop` and `handson-diagrams`. The `SKILL.md` files use no
 Claude-Code-only dynamic syntax, so they run unchanged in Codex. Restart Codex to pick up new skills.
 
+Invoke with `$handson-workshop <topic>` — Codex invokes skills as `$name`, not the `/name`
+slash-command form Claude Code uses.
+
 > Codex also supports *plugins* for distributing reusable skills; a Codex-plugin wrapper for this
 > kit is a possible future addition. For now the Codex side is a direct skill install.
 
@@ -109,7 +112,8 @@ python3 tools/package_chatgpt_skills.py <version>    # writes dist/<skill>-<vers
 ## Quickstart
 
 ```text
-/handson-workshop "git internals"
+/handson-workshop "git internals"      # Claude Code
+$handson-workshop "git internals"      # Codex
 ```
 
 The skill will interview you, check your system, and (with your approval) fill any tool gaps before
