@@ -28,7 +28,8 @@ Contains two skills:
 The skill supports **two output shapes**. For short/medium workshops it writes a single scrolling
 page; for large or heavily-expanded ones it writes a multi-page "wiki" (one page per module).
 
-**Single-page** (default) — for a topic slug like `http-caching`:
+**Single-page** (default) — each workshop lives in its own directory, created where you invoked
+the skill and named after the topic (the workshop on "HTTP caching" becomes `http-caching/`):
 
 ```
 http-caching/
@@ -169,14 +170,21 @@ bash handson-workshop/skills/handson-workshop/assets/serve-workshop.sh git-inter
 
 ## Regenerating the HTML
 
-After editing workshop content (paths relative to this directory):
+The Markdown files are the **source**; the `.html` files beside them are **generated output**.
+To edit a workshop, edit its Markdown (`WORKSHOP.md`, or `content/*.md` in the wiki shape) and
+re-run the generator. The generator only rewrites the `.html` files — your Markdown is never
+touched — and it is idempotent, so re-run it as often as you like.
+
+Using `git-internals/` as the example workshop directory (see
+[What it produces](#what-it-produces)), and with the generator paths relative to this kit
+directory (use the installed skill's `assets/` path if you are not in a repo checkout):
 
 ```bash
-# single-page
-python3 skills/handson-workshop/assets/workshop-html-generator.py <slug>/WORKSHOP.md
+# single-page: rewrites git-internals/WORKSHOP.html beside the .md
+python3 skills/handson-workshop/assets/workshop-html-generator.py git-internals/WORKSHOP.md
 
-# multi-page wiki
-python3 skills/handson-workshop/assets/wiki-generator.py <slug>/content/wiki.json
+# multi-page wiki: rewrites index.html and module-*.html at the workshop root
+python3 skills/handson-workshop/assets/wiki-generator.py git-internals/content/wiki.json
 ```
 
 ## Assets
