@@ -183,7 +183,8 @@ def render_page(page, idx, pages, content_dir, out_dir, title,
     page_title = h1.get_text(strip=True) if h1 else page.get("nav", title)
     # Avoid "Title, Title" on the landing page, where the h1 equals the site title.
     doc_title = page_title if page_title == title else f"{page_title} - {title}"
-    content_html = str(soup) + "\n" + build_page_nav(pages, idx)
+    content_html = (str(soup) + "\n" + build_page_nav(pages, idx)
+                    + "\n" + whg.ATTRIBUTION_HTML)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">

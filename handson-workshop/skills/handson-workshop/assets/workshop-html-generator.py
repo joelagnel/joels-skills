@@ -52,6 +52,15 @@ from pygments.styles import get_style_by_name
 # Path relative to this file
 PICO_CSS_PATH = Path(__file__).parent / 'pico.classless.min.css'
 
+# Version stamped into the attribution footer on every generated page.
+SKILL_VERSION = '1.2.0'
+SKILL_URL = 'https://github.com/joelagnel/joels-skills/tree/master/handson-workshop'
+ATTRIBUTION_HTML = (
+    '<footer class="attribution">Created by '
+    f'<a href="{SKILL_URL}" target="_blank" rel="noopener">'
+    f'HOW (hands-on workshop skill, v{SKILL_VERSION})</a></footer>'
+)
+
 
 # ── Themes ───────────────────────────────────────────────────────────────────
 # Five fixed themes, selectable from the sidebar swatch picker and persisted
@@ -465,6 +474,17 @@ main.content-wrap a:hover { color: var(--link-hover, var(--accent)); }
   main.content-wrap h1 { background: none; -webkit-text-fill-color: initial; color: var(--heading); }
   main.content-wrap strong, main.content-wrap em { color: inherit; }
 }
+
+/* ── Attribution footer ───────────────────────────────────────────────────── */
+
+footer.attribution {
+  margin: 3rem 0 .5rem;
+  text-align: center;
+  font-size: .85em;
+  color: var(--text-muted);
+}
+footer.attribution a { color: var(--text-muted); text-decoration: underline; }
+footer.attribution a:hover { color: var(--link-hover, var(--accent)); }
 """
 
 # Custom palette overrides (Pico's CSS variables), layered on the theme
@@ -1639,6 +1659,7 @@ def convert(md_path: Path, out_path: Path, embed_img: bool = True):
 <div id="main">
   <main class="content-wrap">
 {content_html}
+{ATTRIBUTION_HTML}
   </main>
 </div>
 <div id="lightbox" class="lightbox" role="dialog" aria-label="Enlarged diagram">
