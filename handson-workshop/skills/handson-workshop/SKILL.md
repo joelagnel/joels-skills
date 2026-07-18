@@ -106,18 +106,27 @@ ladder:
   thing answers correctly.
 
 Write them like good quiz questions: one clearly correct answer, and distractors that are each
-a *real, common misconception* rather than filler, so a wrong answer carries information. Frame
-the batch as tuning, not testing: "A few quick technical questions so the workshop lands at the
-right depth — guessing is fine." Use the same question tool as the self-report batch.
+a *real, common misconception* rather than filler, so a wrong answer carries information. Every
+diagnostic question also carries an explicit **"I don't know"** option, and the framing invites
+it: "A few quick technical questions so the workshop lands at the right depth — if you are not
+sure, pick 'I don't know'; an honest blank tunes the depth better than a lucky guess." Without
+that option people guess, and a lucky guess reads as proficiency and mis-tunes everything
+downstream (real user feedback). Use the same question tool as the self-report batch.
 
 Combine the diagnostic with the self-report, and let **demonstrated performance win** when the
 two disagree:
 
 | Diagnostic outcome | Treat as |
 |--------------------|----------|
+| Mostly "I don't know" | Beginner, and say so warmly (honesty was the point); Module 0 required, generous vocabulary coverage |
 | Misses the vocabulary question | Beginner (whatever was self-reported); Module 0 required |
 | Vocabulary + working knowledge right, internals missed | Intermediate; each missed internals question becomes an explicit target for the module that covers it |
 | Everything right, including internals | Advanced; skip Module 0, push the experiments deeper |
+
+Read the ladder for *consistency*, not single hits: a correct answer on a high rung with
+misses (or "I don't know") on the rungs below it is more likely a lucky pick than
+proficiency, so the level is the highest rung answered correctly *with everything below it
+also correct*.
 
 The specific wrong answers are worth more than the score: every distractor the user picked
 names a live misconception. Note which were chosen and wire each into the module that touches
