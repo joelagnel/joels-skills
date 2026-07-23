@@ -221,7 +221,7 @@ Copy `assets/workshop-template.md` to `WORKSHOP.md` and fill it in. Module struc
 **Goal.** One sentence.
 **Setup.** What state the system should be in.
 **Commands.** Exact lines to copy, a `#` comment above each step.
-**Expected output.** Verbatim (cross-check: `captures/foo.log` lines NN-MM).
+**Expected output.** Verbatim; provenance as a natural inline link ("as the log shows"), never a trailing citation.
 
 (Best-fit diagram if it explains the model better than prose — see step 4.
 Sample code if the concept manifests in code — see the sample-code rule below.)
@@ -261,17 +261,23 @@ log pages might as well not exist.
 3. **A "let's go deeper" walkthrough** that reads the key figures aloud: what each
    column or field means, and which value the argument turns on.
 
-Provenance is optional verification, never load-bearing. Cite it as a compact trailing
-parenthetical in one fixed shape — "(cross-check: [results.log lines 8-10](...))" — at
-the end of the introducing sentence or after the block. Do not weave log-line numbers or
-script-section names into the sentence's flow ("the pass logs that matrix at lines
-29-34" makes the log required reading; the real reader flag was "what log is this?"),
-and every value the prose reasons with must itself appear on the page, not behind the
-link. (Real weak/fixed pair from review: the weak version showed a dataset-generation
-snippet, output that code never prints, and "(Captured in captures/results.log lines
-8-10.)" pointing at a file the reader cannot browse; the fix showed the actual logging
-lines, the output, the walkthrough, and reduced the log reference to a trailing
-cross-check.)
+Provenance is optional verification, never load-bearing. Cite it as a **natural hyperlink
+woven into the sentence that introduces the block**, anchored on descriptive words and
+pointing at the log or source *page* — "as [the loader reports](captures-log.html#...):",
+"the [full run is in the log](...)", "about 20 ms per token, [as the counters
+show](...)". Avoid the two failure modes at the sentence's edges. (a) A **trailing
+bracketed citation** — "(cross-check: results.log lines 8-10)" — reads as bureaucracy the
+reader skips; a real reader said the cross-check "is not helpful, I almost never do a
+cross check." (b) **Line numbers or filenames woven into the prose flow** — "the pass
+logs that matrix at lines 29-34" — makes the log feel like required reading and drew the
+flag "what log is this?". The synthesis that satisfies both: the anchor text is plain
+language, the link target is the page (not a line range or a bare filename), and every
+value the prose reasons with still appears on the page, not behind the link. (Real
+weak/fixed pair from review: the weak version showed a dataset-generation snippet, output
+that code never prints, and "(Captured in captures/results.log lines 8-10.)" pointing at a
+file the reader cannot browse; the fix showed the actual logging lines, the output, the
+walkthrough, and folded the log reference into a hyperlinked descriptive phrase in the
+sentence introducing the block.)
 
 The bar: a reader should never meet a number without knowing what ran to produce it and
 what it is telling them — and never need a second page open to follow the first.
@@ -303,8 +309,8 @@ snippet that runs the measurement (often 3–5 lines), put the PyTorch/tool mech
 collapsible optional section as a labeled minimal-essence illustration, and link the full
 implementation on the Source page for the curious. One corollary: **never show plotting
 or logging code on the main path** — colors, `semilogy` calls, and format strings teach
-nothing about the topic; the chart itself plus a trailing "(cross-check: results.log
-lines N-M)" note carries all the provenance. (Inactive machinery is the same
+nothing about the topic; the chart itself, with a natural hyperlink to the log in the
+sentence that introduces it, carries all the provenance. (Inactive machinery is the same
 trap: a shared experiment class serving many variants is good design, but if a disabled
 branch shows up in something you quote, quote a smaller region or spend at most one
 sentence making it a foreshadow of the module that activates it.)
@@ -491,6 +497,42 @@ derivation, cite the logged inputs, note when rounding can drift the last digit 
 the logged output); no need to re-run the experiment and shift every downstream log
 citation. One litmus test covers all three faces: could the reader rebuild the claim
 from what is on the page with a pencil — or are they taking your word for it?
+
+**Walking through code means explaining it, not narrating it.** When a module quotes source
+and walks it line by line, two failure modes read as narration rather than teaching, both
+real reader flags:
+
+- **Objects and variables referenced but never introduced.** Every object the walkthrough
+  reasons about must be shown being created — or the creating call named — before the prose
+  leans on it, and every variable glossed at first use. Do not write "the model object,
+  loaded earlier" without having quoted the line that loads it; do not walk a block dense
+  with `n_ctx`, `n_batch`, `n_prompt` while only one carries a code comment. (Real flags: a
+  walkthrough said "the model object, loaded earlier from the GGUF" but never showed or named
+  the `load_from_file` call that creates it; a separate stop used four `n_*` variables and a
+  `ctx` object with a terse comment on one and no word on what the context even is. The fix
+  added a short setup step quoting the creating calls and naming each object, plus a bulleted
+  gloss of every variable at the point it is used.)
+- **A general structure shown, used trivially, left unmotivated.** When the code exposes an
+  extensible shape (a sampler *chain*, a plugin registry, a middleware stack, a strategy
+  list) but the program under the knife uses the degenerate one-element case, explain *why
+  the generality exists* — the concrete problem the other elements solve — not merely that
+  "sometimes you need more." Name a real second case and what it does. (Real flag: a stop
+  showed a one-stage greedy sampler *chain* and said only that a fuller chain has ten stages;
+  the reader asked why a chain is ever needed at all. The fix gave the reason: each stage
+  narrows or reweights the candidates independently — top-k drops all but the k best, a
+  repetition penalty demotes tokens just used, temperature flattens or sharpens the field —
+  so a chain composes policies a single picker could not.)
+- **Control flow shown but never traced.** A loop, recursion, or state machine whose
+  variables change each pass is not explained by describing it in the abstract; walk one or
+  two concrete iterations with real values — what each variable holds, what changes, when it
+  stops. (Real flag: a generation loop quoted `batch`, `n_pos`, and `llama_decode` but the
+  reader said "I have no clue what batch is" and could not see how a sampled token re-enters
+  the loop; the fix named where `batch` is created, then traced the first pass (batch = the
+  five prompt tokens, `n_pos` 0 to 5) and later passes (batch = the single new token, `n_pos`
+  +1 each), so the changing state was shown, not asserted.)
+
+The litmus: a reader with only this page open should never hit a named object, variable,
+structural choice, or loop they cannot account for.
 
 **Verify the mechanism by measurement — don't repeat the textbook story on faith.** The whole
 point of a grounded workshop is that you can *check* the causal claim, not just the numbers. Before
@@ -737,10 +779,12 @@ Notes specific to the wiki shape:
   static hosts and portals frequently 404 them. Instead render BOTH artifacts as wiki pages:
   the experiment script (a one-paragraph frame with the run command and determinism note, then
   one fenced block with the full script; nav e.g. "Source · experiment.py") and the captured
-  log (nav e.g. "Log · results.log") with **line numbers prefixed** so the modules'
-  "(cross-check: results.log lines 25-29)" notes can be looked up directly — a line-number
-  reference with no browsable target reads as random. Keep both regenerable: a tiny helper
-  that rewrites the markdown from the real files beats hand-copying, which drifts.
+  log (nav e.g. "Log · results.log") with **line numbers prefixed** so a curious reader who
+  follows a module's log hyperlink can scan it. The module side links to the log *page* with
+  a natural descriptive phrase ("as the run shows"), never a bare "(cross-check: lines
+  25-29)" citation — a line-number reference with no browsable target reads as random. Keep
+  both regenerable: a tiny helper that rewrites the markdown from the real files beats
+  hand-copying, which drifts.
 - `index.md` is read first: it must pass the overview-vocabulary rule from step 3 — punchlines
   phrased as outcomes, no reliance on terms the modules will introduce.
 
@@ -808,7 +852,7 @@ If you keep your workshops in a git repo, commit the `<slug>/` directory like an
 | Depth | Matched to the level the interview *and* diagnostic questions measured | One-size-fits-all, or trusting self-report blindly |
 | Prerequisites | Confirmed installed (or gaps surfaced) before drafting | Commands the author can't actually run |
 | Commands | Real captured output, cited to a file | Invented / handwave output |
-| Captures | Everything inline; trailing "(cross-check: log lines N-M)" | Values behind links; log lines woven into sentence flow |
+| Captures | Every value on the page; provenance a natural inline hyperlink ("as the log shows") | Trailing "(cross-check: lines N-M)" brackets, line numbers in prose, or values only behind links |
 | Teaching path | Minimal lesson-serving snippets; harness behind optional sections | Framework `forward()` + plotting loops on the main path |
 | Sample code | Verbatim script excerpts, or runnable snippets with captured output | Pseudo-code passing as real; snippet output never actually run |
 | Core result | Designed table on one worked datum: quantities one at a time, contributions and sum visible, before/after with changes named | Nine-column log dump, or two scalar products in dense prose |
