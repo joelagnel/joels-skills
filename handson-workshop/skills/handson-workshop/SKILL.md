@@ -525,7 +525,13 @@ real reader flags:
   the reader asked why a chain is ever needed at all. The fix gave the reason: each stage
   narrows or reweights the candidates independently — top-k drops all but the k best, a
   repetition penalty demotes tokens just used, temperature flattens or sharpens the field —
-  so a chain composes policies a single picker could not.)
+  so a chain composes policies a single picker could not.) Order matters as much as
+  motivation: establish the component's **job on the data** before its internal *structure*.
+  Leading with "a sampler is a chain of stages" before the reader knows a sampler's job is to
+  pick one token from the logits hands them an abstraction with nothing to pin it to; state
+  the job, then the structure. (Same real flag: the chain stop opened on the chain; the fix
+  first said the sampler selects one token from the 151,936 logits, then introduced the chain
+  as how that selection is composed.)
 - **Control flow shown but never traced.** A loop, recursion, or state machine whose
   variables change each pass is not explained by describing it in the abstract; walk one or
   two concrete iterations with real values — what each variable holds, what changes, when it
