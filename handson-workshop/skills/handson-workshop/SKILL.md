@@ -511,7 +511,11 @@ real reader flags:
   the `load_from_file` call that creates it; a separate stop used four `n_*` variables and a
   `ctx` object with a terse comment on one and no word on what the context even is. The fix
   added a short setup step quoting the creating calls and naming each object, plus a bulleted
-  gloss of every variable at the point it is used.)
+  gloss of every variable at the point it is used.) The same applies to a **non-obvious
+  constant** in a quoted expression: an off-by-one the prose glides past — the `- 1` in
+  `n_ctx = n_prompt + n_predict - 1` — is a claim to earn (the last generated token is never
+  decoded, so it takes no context slot), not a magic number. If the prose reasons about a
+  literal ("not a token more"), it must say where the literal comes from.
 - **A general structure shown, used trivially, left unmotivated.** When the code exposes an
   extensible shape (a sampler *chain*, a plugin registry, a middleware stack, a strategy
   list) but the program under the knife uses the degenerate one-element case, explain *why
