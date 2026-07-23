@@ -795,6 +795,17 @@ Notes specific to the wiki shape:
   25-29)" citation — a line-number reference with no browsable target reads as random. Keep
   both regenerable: a tiny helper that rewrites the markdown from the real files beats
   hand-copying, which drifts.
+- **When a module walks source line by line, make its line references line-precise jump
+  links.** Render the exact file it walks as its own page (nav e.g. "Source · simple.cpp")
+  with one anchor per line, and link each stop heading's descriptive phrase to the line it
+  discusses — `## Stop 1: [tokenize the prompt](simple-source.html#L-100)` — instead of
+  leaving "(lines 100 to 107)" as dead text the reader cannot click. Emit the page with
+  Pygments so every line gets `id="L-<n>"` (`HtmlFormatter(cssclass="codehilite",
+  lineanchors="L", linenos="inline", anchorlinenos=True)`, written into the markdown as a
+  raw-HTML block so the anchors pass through untouched; a `.codehilite :target` CSS rule makes
+  the landed-on line flash). If the module quotes the *pristine* upstream file while another
+  page shows a *hacked* copy, render the pristine one, or the line numbers will not match what
+  the module cites.
 - `index.md` is read first: it must pass the overview-vocabulary rule from step 3 — punchlines
   phrased as outcomes, no reliance on terms the modules will introduce.
 

@@ -121,7 +121,7 @@ def build_wiki_sidebar(pages, current_slug, soup, title):
         if active:
             for h2 in soup.find_all("h2"):
                 hid = h2.get("id")
-                text = h2.get_text(strip=True)
+                text = h2.get_text(" ", strip=True)
                 if not hid or not text:
                     continue
                 if hid.startswith("optional--"):
@@ -180,7 +180,7 @@ def render_page(page, idx, pages, content_dir, out_dir, title,
     whg.wrap_optional_sections(soup)
 
     h1 = soup.find("h1")
-    page_title = h1.get_text(strip=True) if h1 else page.get("nav", title)
+    page_title = h1.get_text(" ", strip=True) if h1 else page.get("nav", title)
     # Avoid "Title, Title" on the landing page, where the h1 equals the site title.
     doc_title = page_title if page_title == title else f"{page_title} - {title}"
     content_html = (str(soup) + "\n" + build_page_nav(pages, idx)
