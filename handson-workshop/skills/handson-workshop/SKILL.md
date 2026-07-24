@@ -718,6 +718,21 @@ in this skill's `assets/` directory:
 python3 <skill-dir>/assets/workshop-html-generator.py WORKSHOP.md
 ```
 
+**Preflight: build with the CURRENT generator, not a stale install.** This generator exists in two
+places — the git source of truth (the `joels-skills` repo) and an *installed plugin snapshot* under
+`~/.claude/plugins/cache/joels-skills/handson-workshop/<version>/…`. The install can silently lag
+the repo: a real incident had the cache frozen ~7 versions behind, so a freshly built workshop
+*lost the sidebar theme picker* and nobody noticed until a reader asked. Guard against it every
+build: **if you have the repo checked out, run the generator FROM THE REPO** (it is the source of
+truth); if you can only use the installed copy, verify it is current before generating. Quick
+feature-check — `grep -c theme_picker_html <generator-path>` returns 0 on a stale copy (the theme
+picker is absent), or compare the generator's `SKILL_VERSION` constant against the repo's. If the
+install is stale, sync the repo's `assets/*.py` (plus `pico.classless.min.css` and
+`exam-template.html`) over it, or run the plugin updater, then rebuild. **Any edit to the generator
+assets MUST bump the plugin version in lockstep in BOTH `.claude-plugin/marketplace.json` and
+`handson-workshop/.claude-plugin/plugin.json` (they must match)** — skipping the bump is exactly why
+an install goes stale, since the updater keys off the version number.
+
 Requires Python 3 with `markdown`, `beautifulsoup4`, and `pygments`
 (`pip install markdown beautifulsoup4 pygments`), plus `latex2mathml` if the workshop contains
 math (`pip install latex2mathml`). It produces a self-contained `WORKSHOP.html`

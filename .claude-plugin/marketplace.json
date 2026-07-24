@@ -10,7 +10,7 @@
     {
       "name": "handson-workshop",
       "description": "Author self-contained, auto-graded hands-on workshops for any technical topic, with a companion diagramming skill.",
-      "version": "0.1.1",
+      "version": "0.3.0",
       "author": {
         "name": "Joel Fernandes",
         "email": "joel@joelfernandes.org"
