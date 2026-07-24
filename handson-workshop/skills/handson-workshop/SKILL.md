@@ -540,6 +540,16 @@ real reader flags:
   the loop; the fix named where `batch` is created, then traced the first pass (batch = the
   five prompt tokens, `n_pos` 0 to 5) and later passes (batch = the single new token, `n_pos`
   +1 each), so the changing state was shown, not asserted.)
+- **Bare inline fragments, when the reader needs the whole function.** A walkthrough that
+  drops many tiny `cpp` fragments and narrates each one leaves the reader unable to see the
+  function whole, and a fragment sitting alone makes the next sentence read as random ("it's
+  unclear which function this belongs to"). Show walked source as a **captioned code-listing
+  figure** (perfbook style): a caption bar `Listing N: <caption> (file lines X-Y)`, real
+  source line numbers, a bordered box, referenced from prose by "Listing N" and by "line M".
+  Prefer a few longer coherent listings (a whole function or loop) over many short fragments;
+  reference specific lines by their real number. The mechanics are in step 5b. (Real flag:
+  module 3's pipeline walkthrough showed 8 disconnected fragments; the fix grouped them into
+  4 captioned listings the prose walks by line.)
 
 The litmus: a reader with only this page open should never hit a named object, variable,
 structural choice, or loop they cannot account for.
@@ -806,6 +816,25 @@ Notes specific to the wiki shape:
   the landed-on line flash). If the module quotes the *pristine* upstream file while another
   page shows a *hacked* copy, render the pristine one, or the line numbers will not match what
   the module cites.
+- **Render walked source as captioned "Listing N" figures, not bare inline fences** (the
+  code-walkthrough rule in step 3). Drive them from a manifest of
+  `{key, number, caption, source, start, end, linenostart, label}` and inject each into the
+  module markdown at an in-place marker region `<!-- LISTING:key -->...<!-- /LISTING:key -->`
+  that a helper rewrites from the real files (idempotent — re-running yields an empty diff;
+  the "a helper that rewrites the markdown from the real files beats hand-copying" ethos). The
+  helper reads `source` (a byte-exact slice file committed under `scripts/`, so the build never
+  depends on an external checkout), slices `[start:end]`, and emits
+  `<figure class="code-listing" id="listing-N"><figcaption>Listing N: caption (label)</figcaption>…</figure>`
+  where the code is `HtmlFormatter(cssclass="codehilite", linenos="table", linenostart=…)`.
+  Use `linenos="table"` (not `"inline"`) so the code column copies clean; the generator already
+  carries the `.code-listing`/`figcaption` CSS and a copy-JS guard that skips the gutter `<pre>`
+  (a shared-asset change — apply to the git assets AND the plugin-cache copy the local build
+  imports). **Pristine excerpts** use real source line numbers (`linenostart=<real start>`, and
+  link the caption's `label` to the source page at that line); **hack insertions** have no
+  pristine line number, so use local `linenostart=1` and caption `(added to <file>)`. Verify
+  every slice byte-for-byte against `git show <commit>:<path>` and that each figure's first
+  gutter number equals its `linenostart`. The captioned excerpts COEXIST with the full-file
+  source page above (which stays the browsable whole and the target of per-line deep links).
 - `index.md` is read first: it must pass the overview-vocabulary rule from step 3 — punchlines
   phrased as outcomes, no reliance on terms the modules will introduce.
 
@@ -847,6 +876,26 @@ matches numeric answers by value, so 0.25, .25, and 1/4 all pass against "0.25".
 - If experiments need a specific environment, add a `## Reproducing this workshop` section with the
   exact setup / version / build steps used to capture the output.
 
+### 7b. Adversarial review pass (mandatory)
+
+Once the workshop is generated and cross-linked, run a **skeptical review of the whole thing
+before declaring it done** — review is intrinsic to producing a workshop, not an optional extra.
+In Claude Code, invoke the **`code-skeptic-reviewer`** agent; in Codex or another harness, do the
+equivalent adversarial self-review (read the output as an unconvinced reader hunting for defects).
+Gate it on the reproducibility checks passing first (test before review). The pass verifies:
+
+- every **captured number** matches the source that produced it (re-derive the arithmetic; a real
+  audit caught a dropped token in a tokenizer example that contradicted the surrounding prose);
+- every **code fence and listing** is a byte-verbatim contiguous slice of the real source, and each
+  listing's caption cites line numbers that match its gutter;
+- **prose claims and mechanisms** hold (no fabricated output, no "because" left unearned);
+- all **anchors resolve** (in-page `#...`, cross-page, `#listing-N`, `#L-<n>`), and there are no
+  em-dashes or trailing "(cross-check: ...)" citations;
+- **overview/previews** speak only the reader's starting vocabulary.
+
+Implement every finding, re-run the reproducibility checks, and re-review until the reviewer is
+satisfied (loop). Only then move to sharing.
+
 ### 8. View / share your workshop
 
 The generated HTML (`WORKSHOP.html` for single-page, or `index.html` + `module-*.html` for the
@@ -876,12 +925,14 @@ If you keep your workshops in a git repo, commit the `<slug>/` directory like an
 | Captures | Every value on the page; provenance a natural inline hyperlink ("as the log shows") | Trailing "(cross-check: lines N-M)" brackets, line numbers in prose, or values only behind links |
 | Teaching path | Minimal lesson-serving snippets; harness behind optional sections | Framework `forward()` + plotting loops on the main path |
 | Sample code | Verbatim script excerpts, or runnable snippets with captured output | Pseudo-code passing as real; snippet output never actually run |
+| Code walkthroughs | A few captioned "Listing N" figures with real line numbers, referenced by line | Many bare inline fragments; the whole function never visible |
 | Core result | Designed table on one worked datum: quantities one at a time, contributions and sum visible, before/after with changes named | Nine-column log dump, or two scalar products in dense prose |
 | Overview / previews | Outcomes in the reader's starting vocabulary | Leans on concepts a later module introduces |
 | Diagrams | Explain the mental model; type fits the relationship (sequence for time-order, histogram for distributions) | Decorate; restate the prose; block diagram for everything |
 | Quizzes | Test reasoning | Test trivia / surface recall |
 | Exam | Cover every module | Lopsided to one topic |
 | Reproducibility | Exact environment + version + steps | "Should work on most systems" |
+| Review | Adversarial code-skeptic pass over the generated workshop before shipping (step 7b) | Shipped on first draft, unreviewed |
 | Shareable | Self-contained HTML opens anywhere; exam returns a 70+ pass | Broken links / missing assets |
 
 ## Reference archetypes

@@ -825,6 +825,54 @@ main.content-wrap img.img-portrait {
   max-width: min(100%, 380px);
 }
 
+/* ── Code listings (captioned, line-numbered figures, perfbook style) ─────── */
+figure.code-listing {
+  margin: 1.5rem 0;
+  border: 1px solid var(--code-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--code-bg);
+  box-shadow: var(--shadow);
+}
+figure.code-listing > figcaption {
+  background: var(--surface);
+  color: var(--sidebar-head);
+  font-size: .84rem;
+  font-weight: 600;
+  padding: .5rem .9rem;
+  border-bottom: 1px solid var(--code-border);
+}
+/* the Pygments table renderer nested inside the figure carries no box of its own */
+figure.code-listing .codehilite {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+figure.code-listing table.codehilitetable {
+  width: 100%;
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+}
+figure.code-listing td.linenos,
+figure.code-listing .linenos {
+  color: var(--text-muted);
+  text-align: right;
+  padding: 0 .8rem 0 .6rem;
+  user-select: none;
+  -webkit-user-select: none;
+  white-space: nowrap;
+  border-right: 1px solid var(--code-border);
+  width: 1%;
+}
+figure.code-listing td.code { width: 100%; }
+figure.code-listing td.code pre { margin: 0; }
+@media (max-width: 600px) {
+  figure.code-listing td.linenos { padding: 0 .45rem; font-size: .8rem; }
+  figure.code-listing > figcaption { font-size: .8rem; padding: .4rem .6rem; }
+}
+@media print { figure.code-listing { break-inside: avoid; } }
+
 @media (max-width: 860px) {
   main.content-wrap img {
     margin: 1rem -.5rem;
@@ -1250,6 +1298,8 @@ SIDEBAR_JS = r"""
   }
 
   document.querySelectorAll('main pre').forEach(function (pre) {
+    // a table line-number gutter is its own <pre>; don't add a copy button to it
+    if (pre.closest('td.linenos, .linenodiv')) { return; }
     var btn = document.createElement('button');
     btn.className = 'code-copy-btn';
     btn.type = 'button';
