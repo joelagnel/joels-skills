@@ -56,7 +56,7 @@ PICO_CSS_PATH = Path(__file__).parent / 'pico.classless.min.css'
 # Keep this in LOCKSTEP with the plugin package version in .claude-plugin/
 # marketplace.json and handson-workshop/.claude-plugin/plugin.json (all three
 # must match) so the plugin updater refreshes installs when the generator changes.
-SKILL_VERSION = '1.3.1'
+SKILL_VERSION = '1.3.2'
 SKILL_URL = 'https://github.com/joelagnel/joels-skills/tree/master/handson-workshop'
 ATTRIBUTION_HTML = (
     '<footer class="attribution">Created by '
@@ -865,12 +865,13 @@ figure.code-listing .linenos {
   color: var(--code-fg) !important;
   opacity: .38;
   background: transparent !important;
-  padding: 0 .85em 0 0 !important;
+  /* thin separator only; the code's own leading indentation supplies the rest of
+     the gap, so an indented line sits ~4 spaces off the number, not more */
+  padding: 0 .5ch 0 0 !important;
   user-select: none;
   -webkit-user-select: none;
 }
 @media (max-width: 600px) {
-  figure.code-listing .linenos { padding: 0 .6em 0 0 !important; }
   figure.code-listing > figcaption { font-size: .8rem; padding: .4rem .6rem; }
 }
 @media print { figure.code-listing { break-inside: avoid; } }
