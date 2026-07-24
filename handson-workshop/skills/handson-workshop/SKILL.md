@@ -745,7 +745,11 @@ beside the markdown file with:
   sidebar and persisted in `localStorage['handson-theme']`; printing pins paper, and the
   exam template follows the same saved choice
 - **Quiz sections** rendered as blue callout boxes
-- **Answer key sections** wrapped in collapsible `<details>` (click to reveal)
+- **Answers inlined per question** — each answer is folded under its own question as an
+  independent "Show answer" `<details>` collapsible (green accent), so answers expand one at
+  a time right below the question instead of all at once. The separate "Answer Key" section
+  and its cross-links are removed automatically; you still author them in markdown (see the
+  quiz/answer-key anchor convention below) and the generator interleaves them by list order.
 - **Optional deep-dive sections** — any h3/h4 with an explicit `{#optional--<slug>}` anchor
   (e.g. `### How was this measured? {#optional--how-measured-2}`) is wrapped in a collapsible
   `<details>` (violet accent, closed by default) and kept out of the sidebar nav. Use these to
@@ -802,9 +806,11 @@ Notes specific to the wiki shape:
   and `captures/` at the workshop root. Reference images from the markdown as `../diagrams/foo.png`
   (they're embedded as base64, so the emitted HTML is still fully self-contained).
 - Each module page holds **its own quiz and answer key** — use `### Quiz {#quiz-N}` and
-  `### Answer Key {#answer-key--module-N}` within that page; the generator wraps them into the blue
-  callout and collapsible `<details>` exactly as in the single-page flow, and prev/next links come
-  from the manifest order. `{#optional--*}` deep-dive sections (step 5) work per page the same
+  `### Answer Key {#answer-key--module-N}` within that page; the generator wraps the quiz into the
+  blue callout, then **folds each answer inline under its matching question** as an independent
+  "Show answer" collapsible (pairing question N with answer N by list order) and removes the
+  separate answer-key section. Author both as usual; the interleaving is automatic. prev/next links
+  come from the manifest order. `{#optional--*}` deep-dive sections (step 5) work per page the same
   way.
 - The exam is a prebuilt `exam.html`; list it as an `"external": true` page so it appears in the
   sidebar without the generator trying to render it. Point the exam's answer-explanation links at
@@ -880,7 +886,10 @@ matches numeric answers by value, so 0.25, .25, and 1/4 all pass against "0.25".
   - Quiz heading: `### Quiz N {#quiz-n}` + trailing `→ [Answer Key — Module N](#answer-key--module-n)`
   - Answer-key heading: `### Answer Key — Module N {#answer-key--module-n}` + trailing `↑ [Back to Quiz N](#quiz-n)`
   - In the wiki shape the quiz and its answer key live on the same module page, so these anchors
-    resolve within that page.
+    resolve within that page. (The HTML generator then interleaves each answer inline under its
+    question and drops the standalone answer-key section plus these `→`/`↑` cross-links — they only
+    need to be correct for the markdown/GitHub view; pair by list order, so keep questions and
+    answers in the same order and count.)
 - Answer-key explanations should reference the module (single-page: the section; wiki:
   `module-N.html`) that taught the concept.
 - **Beware heading-slug drift between renderers.** GitHub and the Python-Markdown generator

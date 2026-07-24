@@ -5,7 +5,8 @@ workshop-html-generator.py, Render WORKSHOP.md → styled, self-contained WORKSH
 Features:
   - Sticky sidebar table of contents with JS scroll-position highlighting
   - Quiz sections wrapped in a blue callout box
-  - Answer key sections wrapped in collapsible <details> elements
+  - Each answer inlined under its question as an independent "Show answer"
+    collapsible <details> (the separate answer-key section is folded away)
   - Optional deep-dive sections (h3/h4 with {#optional--*} anchors) wrapped in
     collapsible <details>, kept out of the sidebar nav
   - Syntax-highlighted fenced code blocks (Pygments github-dark style)
@@ -56,7 +57,7 @@ PICO_CSS_PATH = Path(__file__).parent / 'pico.classless.min.css'
 # Keep this in LOCKSTEP with the plugin package version in .claude-plugin/
 # marketplace.json and handson-workshop/.claude-plugin/plugin.json (all three
 # must match) so the plugin updater refreshes installs when the generator changes.
-SKILL_VERSION = '1.3.2'
+SKILL_VERSION = '1.4.0'
 SKILL_URL = 'https://github.com/joelagnel/joels-skills/tree/master/handson-workshop'
 ATTRIBUTION_HTML = (
     '<footer class="attribution">Created by '
@@ -950,37 +951,7 @@ figure.code-listing .linenos {
   text-decoration: none;
 }
 
-/* ── Answer key (collapsible) ───────────────────────────────────────────── */
-
-details.answer-key-section {
-  border: 1px solid var(--ans-sum-bg);
-  border-left: 4px solid var(--ans-border);
-  border-radius: 0 8px 8px 0;
-  margin: .75rem 0;
-  overflow: hidden;
-}
-details.answer-key-section > summary {
-  background: var(--ans-sum-bg);
-  padding: .7rem 1rem;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 1rem;
-  color: var(--ans-sum-text);
-  user-select: none;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
-details.answer-key-section > summary::-webkit-details-marker { display: none; }
-details.answer-key-section > summary::before {
-  content: "\\25B6";
-  font-size: .65em;
-  transition: transform .2s ease;
-  color: var(--ans-border);
-  flex-shrink: 0;
-}
-details.answer-key-section[open] > summary::before { transform: rotate(90deg); }
+/* ── Answer bodies (shared by the per-question inline answers below) ─────── */
 .answer-body {
   padding: 1rem 1.25rem;
   background: var(--ans-body-bg);
@@ -988,6 +959,40 @@ details.answer-key-section[open] > summary::before { transform: rotate(90deg); }
 }
 .answer-body p, .answer-body li { color: var(--text); }
 .answer-body p a { color: var(--ans-border); font-weight: 600; }
+
+/* ── Per-question inline answers (each expands on its own) ───────────────── */
+details.q-answer {
+  margin: .5rem 0 .25rem;
+  border-left: 3px solid var(--ans-border);
+  border-radius: 0 6px 6px 0;
+  overflow: hidden;
+  background: var(--ans-sum-bg);
+}
+details.q-answer > summary {
+  padding: .38rem .7rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: .85rem;
+  color: var(--ans-sum-text);
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
+details.q-answer > summary::-webkit-details-marker { display: none; }
+details.q-answer > summary::before {
+  content: "\\25B6";
+  font-size: .6em;
+  transition: transform .2s ease;
+  color: var(--ans-border);
+  flex-shrink: 0;
+}
+details.q-answer[open] > summary::before { transform: rotate(90deg); }
+details.q-answer > .answer-body {
+  padding: .55rem .8rem;
+  font-size: .95rem;
+}
 
 /* ── Optional deep-dive sections (collapsible) ──────────────────────────── */
 
@@ -1484,6 +1489,8 @@ def build_sidebar(soup):
             continue
         if hid.startswith('optional--'):
             continue   # collapsed deep-dives stay out of the nav
+        if hid.startswith('answer-key--'):
+            continue   # answers are inlined into the quiz; the heading is removed
         items.append((tag.name, text, hid))
 
     if not items:
@@ -1521,28 +1528,71 @@ def wrap_quiz_sections(soup):
             wrapper.append(s.extract())
 
 
-def wrap_answer_key_sections(soup):
-    """Wrap answer-key-module-N h3 + content in collapsible <details>."""
-    for h3 in list(soup.find_all('h3', id=lambda x: x and x.startswith('answer-key--module-'))):
-        hid = h3.get('id')
-        siblings = []
-        for sib in h3.next_siblings:
+def inline_quiz_answers(soup):
+    """Interleave each answer-key answer inline under its matching quiz question as a
+    per-question collapsible <details>, then remove the separate answer-key section and
+    the quiz's "Answer Key" nav link. Questions and answers pair by list order
+    (question N <-> answer N), so each answer expands independently, right below its
+    question, instead of one block revealing them all at once."""
+
+    def first_list_after(h):
+        for sib in h.next_siblings:
+            if isinstance(sib, Tag):
+                if sib.name in ('h2', 'h3', 'h4', 'hr'):
+                    return None
+                if sib.name in ('ol', 'ul'):
+                    return sib
+        return None
+
+    for quiz_h3 in list(soup.find_all('h3', id=lambda x: x and x.startswith('quiz-'))):
+        num = quiz_h3.get('id').split('-', 1)[1]          # 'quiz-3' -> '3'
+        ak_h3 = soup.find('h3', id='answer-key--module-' + num)
+        if not ak_h3:
+            continue
+        q_ol, a_ol = first_list_after(quiz_h3), first_list_after(ak_h3)
+        if not q_ol or not a_ol:
+            # No numbered list under the quiz and/or its answer key (e.g. an
+            # unfilled placeholder). Leave both sections untouched rather than
+            # half-processing, but say so — a silent skip hides authoring gaps.
+            print(f"  WARNING: quiz-{num}: could not find a question and/or "
+                  f"answer list; leaving the answer key un-inlined")
+            continue
+        q_items = q_ol.find_all('li', recursive=False)
+        a_items = a_ol.find_all('li', recursive=False)
+        if len(q_items) != len(a_items):
+            print(f"  WARNING: quiz-{num} has {len(q_items)} questions but "
+                  f"{len(a_items)} answers; pairing by order")
+        for q_li, a_li in zip(q_items, a_items):
+            details = soup.new_tag('details', **{'class': 'q-answer'})
+            summary = soup.new_tag('summary')
+            summary.string = 'Show answer'
+            body = soup.new_tag('div', **{'class': 'answer-body'})
+            details.append(summary)
+            details.append(body)
+            for child in list(a_li.children):
+                body.append(child.extract())
+            q_li.append(details)
+        # drop the quiz's standalone "Answer Key" back-link paragraph (now
+        # pointless). Match only a <p> — never the question <ol>/<ul>, which
+        # could itself contain an answer-key cross-link and would take every
+        # question (and the answers just inlined) down with it.
+        for sib in list(quiz_h3.next_siblings):
             if isinstance(sib, Tag) and sib.name in ('h2', 'h3', 'h4', 'hr'):
                 break
-            siblings.append(sib)
-
-        title = h3.get_text(strip=True)
-        details = soup.new_tag('details', **{'class': 'answer-key-section', 'id': hid})
-        summary = soup.new_tag('summary')
-        summary.string = title
-        body_div = soup.new_tag('div', **{'class': 'answer-body'})
-        details.append(summary)
-        details.append(body_div)
-
-        h3.insert_before(details)
-        h3.extract()  # id moved to <details>
-        for s in siblings:
-            body_div.append(s.extract())
+            if isinstance(sib, Tag) and sib.name == 'p' and sib.find(
+                    'a', href=lambda h: h and h.startswith('#answer-key')):
+                sib.extract()
+        # remove the separate answer-key section (h3 + its list + back-link)
+        for sib in list(ak_h3.next_siblings):
+            if isinstance(sib, Tag) and sib.name in ('h2', 'h3', 'h4', 'hr'):
+                break
+            sib.extract()
+        ak_h3.extract()
+        # Any surviving link that still targets the removed answer-key anchor
+        # (e.g. a question that cross-referenced it) would now dangle — unwrap
+        # it to plain text so no href points at a deleted id.
+        for a in soup.find_all('a', href='#answer-key--module-' + num):
+            a.unwrap()
 
 
 def wrap_optional_sections(soup):
@@ -1680,8 +1730,8 @@ def convert(md_path: Path, out_path: Path, embed_img: bool = True):
     style_meta_block(soup)
     style_exam_links(soup)
     wrap_tables(soup)
+    inline_quiz_answers(soup)       # each answer as a per-question collapsible, inline
     wrap_quiz_sections(soup)
-    wrap_answer_key_sections(soup)  # moves answer-key--module-N id from h3 → <details>
     wrap_optional_sections(soup)    # moves optional--* id from h3/h4 → <details>
 
     title_tag = soup.find('h1')

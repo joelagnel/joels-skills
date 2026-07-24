@@ -175,8 +175,8 @@ def render_page(page, idx, pages, content_dir, out_dir, title,
     whg.style_meta_block(soup)
     whg.style_exam_links(soup)
     whg.wrap_tables(soup)
+    whg.inline_quiz_answers(soup)   # each answer as a per-question collapsible, inline
     whg.wrap_quiz_sections(soup)
-    whg.wrap_answer_key_sections(soup)
     whg.wrap_optional_sections(soup)
 
     h1 = soup.find("h1")
