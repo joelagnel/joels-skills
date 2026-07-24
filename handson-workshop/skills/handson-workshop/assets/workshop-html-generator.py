@@ -56,7 +56,7 @@ PICO_CSS_PATH = Path(__file__).parent / 'pico.classless.min.css'
 # Keep this in LOCKSTEP with the plugin package version in .claude-plugin/
 # marketplace.json and handson-workshop/.claude-plugin/plugin.json (all three
 # must match) so the plugin updater refreshes installs when the generator changes.
-SKILL_VERSION = '1.3.0'
+SKILL_VERSION = '1.3.1'
 SKILL_URL = 'https://github.com/joelagnel/joels-skills/tree/master/handson-workshop'
 ATTRIBUTION_HTML = (
     '<footer class="attribution">Created by '
@@ -857,32 +857,20 @@ figure.code-listing .codehilite {
   border-radius: 0;
   background: transparent;
 }
-figure.code-listing table.codehilitetable {
-  width: 100%;
-  border-collapse: collapse;
-  display: block;
-  overflow-x: auto;
-}
-/* Line numbers read as a faint gutter that blends into the code, not a table
-   column: no rule, no separate background, low-opacity light numerals. */
-figure.code-listing td.linenos,
+figure.code-listing .codehilite pre { margin: 0; }
+/* Inline line numbers: ONE column, the number prepended to each code line with a
+   little trailing whitespace. Always light+muted (the figure is a dark code block
+   in every theme); override the github-dark grey/background the Pygments sheet sets. */
 figure.code-listing .linenos {
-  color: var(--code-fg);
-  opacity: .3;
-  text-align: right;
-  padding: 0 .55rem 0 .25rem;
+  color: var(--code-fg) !important;
+  opacity: .38;
+  background: transparent !important;
+  padding: 0 .85em 0 0 !important;
   user-select: none;
   -webkit-user-select: none;
-  white-space: nowrap;
-  border: none;
-  background: transparent;
-  width: 1%;
 }
-figure.code-listing td.linenos .linenodiv pre { margin: 0; background: transparent; border: none; }
-figure.code-listing td.code { width: 100%; }
-figure.code-listing td.code pre { margin: 0; }
 @media (max-width: 600px) {
-  figure.code-listing td.linenos { padding: 0 .35rem; font-size: .8rem; }
+  figure.code-listing .linenos { padding: 0 .6em 0 0 !important; }
   figure.code-listing > figcaption { font-size: .8rem; padding: .4rem .6rem; }
 }
 @media print { figure.code-listing { break-inside: avoid; } }
@@ -1326,6 +1314,9 @@ SIDEBAR_JS = r"""
       var clone = pre.cloneNode(true);
       var b = clone.querySelector('.code-copy-btn');
       if (b) b.remove();
+      // inline line numbers are <span class="linenos"> inside the code <pre>;
+      // drop them so pasted text is code-only
+      clone.querySelectorAll('.linenos').forEach(function (n) { n.remove(); });
       copyText(clone.innerText.replace(/\n+$/, '\n'), function () {
         btn.classList.add('copied');
         btn.innerHTML = CHECK_SVG;
