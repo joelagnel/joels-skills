@@ -729,9 +729,10 @@ feature-check — `grep -c theme_picker_html <generator-path>` returns 0 on a st
 picker is absent), or compare the generator's `SKILL_VERSION` constant against the repo's. If the
 install is stale, sync the repo's `assets/*.py` (plus `pico.classless.min.css` and
 `exam-template.html`) over it, or run the plugin updater, then rebuild. **Any edit to the generator
-assets MUST bump the plugin version in lockstep in BOTH `.claude-plugin/marketplace.json` and
-`handson-workshop/.claude-plugin/plugin.json` (they must match)** — skipping the bump is exactly why
-an install goes stale, since the updater keys off the version number.
+assets MUST bump the version in lockstep in all THREE places — `SKILL_VERSION` in
+`workshop-html-generator.py` (the footer stamp), `.claude-plugin/marketplace.json`, and
+`handson-workshop/.claude-plugin/plugin.json` (all three must match)** — skipping the bump is
+exactly why an install goes stale, since the updater keys off the version number.
 
 Requires Python 3 with `markdown`, `beautifulsoup4`, and `pygments`
 (`pip install markdown beautifulsoup4 pygments`), plus `latex2mathml` if the workshop contains

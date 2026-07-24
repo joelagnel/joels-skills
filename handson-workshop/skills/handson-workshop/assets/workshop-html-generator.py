@@ -53,7 +53,10 @@ from pygments.styles import get_style_by_name
 PICO_CSS_PATH = Path(__file__).parent / 'pico.classless.min.css'
 
 # Version stamped into the attribution footer on every generated page.
-SKILL_VERSION = '1.2.0'
+# Keep this in LOCKSTEP with the plugin package version in .claude-plugin/
+# marketplace.json and handson-workshop/.claude-plugin/plugin.json (all three
+# must match) so the plugin updater refreshes installs when the generator changes.
+SKILL_VERSION = '1.3.0'
 SKILL_URL = 'https://github.com/joelagnel/joels-skills/tree/master/handson-workshop'
 ATTRIBUTION_HTML = (
     '<footer class="attribution">Created by '
@@ -63,27 +66,30 @@ ATTRIBUTION_HTML = (
 
 
 # ── Themes ───────────────────────────────────────────────────────────────────
-# Five fixed themes, selectable from the sidebar swatch picker and persisted
+# Seven fixed themes, selectable from the sidebar swatch picker and persisted
 # in localStorage['handson-theme']. Each theme is permanently dark or light —
-# there are no per-theme dark-mode variants. 'aurora' (vivid dark) is the
+# there are no per-theme dark-mode variants. 'midnight' (calm dark) is the
 # default. Variables are emitted as [data-theme=X] blocks over one shared set
 # of names; a tiny inline <head> script applies the saved theme before first
 # paint (no flash), and printing always pins the 'paper' palette.
 
 # name, picker label, swatch background, swatch dot (accent)
 THEMES = [
-    ('aurora',    'Aurora (vivid dark, default)', '#0d0b1e',
-     'linear-gradient(135deg,#22d3ee,#f472b6)'),
-    ('midnight',  'Midnight (dark)',              '#0b1220', '#60a5fa'),
-    ('synthwave', 'Synthwave (dark)',             '#16072b',
-     'linear-gradient(135deg,#ff6ad5,#00e5ff)'),
-    ('paper',     'Paper (light)',                '#eef2f7', '#2563eb'),
-    ('sepia',     'Sepia (light)',                '#f3ecdd', '#b45309'),
+    ('midnight',   'Midnight (dark, default)',   '#0b1220', '#60a5fa'),
+    ('nord',       'Nord (calm dark)',           '#2e3440', '#88c0d0'),
+    ('tokyo',      'Tokyo Night (dark)',         '#24283b',
+     'linear-gradient(135deg,#7aa2f7,#bb9af7)'),
+    ('catppuccin', 'Catppuccin Mocha (dark)',    '#1e1e2e',
+     'linear-gradient(135deg,#cba6f7,#89b4fa)'),
+    ('rosepine',   'Rosé Pine (dark)',           '#191724',
+     'linear-gradient(135deg,#c4a7e7,#9ccfd8)'),
+    ('paper',      'Paper (light)',              '#eef2f7', '#2563eb'),
+    ('sepia',      'Sepia (light)',              '#f3ecdd', '#b45309'),
 ]
 
 # Runs in <head>, before the stylesheet paints.
 THEME_HEAD_JS = (
-    "(function(){var t='aurora';"
+    "(function(){var t='midnight';"
     "try{t=localStorage.getItem('handson-theme')||t;}catch(e){}"
     "document.documentElement.setAttribute('data-theme',t);})();"
 )
@@ -99,63 +105,6 @@ def theme_picker_html():
     return ('  <div class="theme-picker" role="group" aria-label="Color theme">\n'
             f'    {btns}\n  </div>\n')
 
-
-_AURORA_VARS = """\
-  color-scheme: dark;
-  --pico-primary:        #22d3ee;
-  --pico-primary-hover:  #67e8f9;
-  --pico-primary-focus:  rgba(34, 211, 238, 0.3);
-  --pico-primary-inverse:#08303a;
-  --pico-color:          #e6e4f5;
-  --pico-h1-color:       #f5f3ff;
-  --pico-h2-color:       #c4b5fd;
-  --pico-h3-color:       #93c5fd;
-  --pico-h4-color:       #e6e4f5;
-  --pico-muted-color:    #a5a0c8;
-  --bg:              #0d0b1e;
-  --surface:         #171432;
-  --sidebar-bg:      #100d24;
-  --sidebar-text:    #9d97c9;
-  --sidebar-head:    #e9d5ff;
-  --sidebar-active:  #f0abfc;
-  --sidebar-hover:   rgba(255,255,255,.07);
-  --text:            #e6e4f5;
-  --text-muted:      #a5a0c8;
-  --heading:         #f5f3ff;
-  --accent:          #22d3ee;
-  --accent2:         #f472b6;
-  --code-bg:         #0a0818;
-  --code-fg:         #e6edf3;
-  --code-border:     #2a2450;
-  --ic-bg:           #2b1f4d;
-  --ic-fg:           #d8b4fe;
-  --quiz-bg:         #0e2233;
-  --quiz-border:     #22d3ee;
-  --quiz-text-link-bg: #164e63;
-  --ans-border:      #a3e635;
-  --ans-sum-bg:      #1d2e10;
-  --ans-sum-text:    #d9f99d;
-  --ans-body-bg:     #131f0b;
-  --opt-border:      #fbbf24;
-  --opt-sum-bg:      #33260b;
-  --opt-sum-text:    #fde68a;
-  --opt-body-bg:     #241b08;
-  --border:          #2b2650;
-  --table-row-hover: #1b1740;
-  --meta-bg:         #171432;
-  --shadow:          0 2px 8px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.35);
-  --bg-grad:         radial-gradient(1100px 600px at 12% -8%, #241d5c 0%, rgba(13,11,30,0) 60%), radial-gradient(900px 500px at 105% 15%, #143b4d 0%, rgba(13,11,30,0) 55%), #0d0b1e;
-  --sidebar-grad:    linear-gradient(180deg, #1b1546 0%, #100d24 45%, #0d0a1c 100%);
-  --h1-grad-a:       #22d3ee;
-  --h1-grad-b:       #f472b6;
-  --strong-color:    #fbbf24;
-  --em-color:        #f0abfc;
-  --marker-color:    #a3e635;
-  --thead-bg:        #221a52;
-  --thead-fg:        #e9d5ff;
-  --hr-grad:         linear-gradient(90deg, #22d3ee, #f472b6, transparent);
-  --link-hover:      #a5f3fc;
-"""
 
 _MIDNIGHT_VARS = """\
   color-scheme: dark;
@@ -212,63 +161,6 @@ _MIDNIGHT_VARS = """\
   --thead-fg:        #cfe4ff;
   --hr-grad:         linear-gradient(90deg, #60a5fa, #22d3ee, transparent);
   --link-hover:      #bfdbfe;
-"""
-
-_SYNTHWAVE_VARS = """\
-  color-scheme: dark;
-  --pico-primary:        #ff6ad5;
-  --pico-primary-hover:  #ff8fe0;
-  --pico-primary-focus:  rgba(255, 106, 213, 0.3);
-  --pico-primary-inverse:#33041f;
-  --pico-color:          #f3e8ff;
-  --pico-h1-color:       #ffffff;
-  --pico-h2-color:       #f0abfc;
-  --pico-h3-color:       #67e8f9;
-  --pico-h4-color:       #f3e8ff;
-  --pico-muted-color:    #b795e0;
-  --bg:              #16072b;
-  --surface:         #22103f;
-  --sidebar-bg:      #120524;
-  --sidebar-text:    #b795e0;
-  --sidebar-head:    #fbcfe8;
-  --sidebar-active:  #00e5ff;
-  --sidebar-hover:   rgba(255,255,255,.08);
-  --text:            #f3e8ff;
-  --text-muted:      #b795e0;
-  --heading:         #ffffff;
-  --accent:          #ff6ad5;
-  --accent2:         #00e5ff;
-  --code-bg:         #0d0318;
-  --code-fg:         #e6edf3;
-  --code-border:     #3b1a63;
-  --ic-bg:           #3b1a63;
-  --ic-fg:           #f5d0fe;
-  --quiz-bg:         #131046;
-  --quiz-border:     #00e5ff;
-  --quiz-text-link-bg: #1e1b64;
-  --ans-border:      #4ade80;
-  --ans-sum-bg:      #0c2d1c;
-  --ans-sum-text:    #bbf7d0;
-  --ans-body-bg:     #081f14;
-  --opt-border:      #ffd166;
-  --opt-sum-bg:      #33260b;
-  --opt-sum-text:    #ffe9a8;
-  --opt-body-bg:     #241b08;
-  --border:          #3b2a63;
-  --table-row-hover: #2a1650;
-  --meta-bg:         #22103f;
-  --shadow:          0 2px 8px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.35);
-  --bg-grad:         radial-gradient(1000px 600px at 20% -10%, #3b1263 0%, rgba(22,7,43,0) 60%), radial-gradient(800px 500px at 110% 20%, #6b1d4f 0%, rgba(22,7,43,0) 55%), #16072b;
-  --sidebar-grad:    linear-gradient(180deg, #2a0d52 0%, #120524 60%);
-  --h1-grad-a:       #ff6ad5;
-  --h1-grad-b:       #00e5ff;
-  --strong-color:    #ffd166;
-  --em-color:        #ff9ecf;
-  --marker-color:    #00e5ff;
-  --thead-bg:        #33125f;
-  --thead-fg:        #fbcfe8;
-  --hr-grad:         linear-gradient(90deg, #ff6ad5, #00e5ff, transparent);
-  --link-hover:      #ff9ee2;
 """
 
 _PAPER_VARS = """\
@@ -385,8 +277,118 @@ _SEPIA_VARS = """\
   --link-hover:      #92400e;
 """
 
+
+# ── Dark-theme generator ─────────────────────────────────────────────────────
+# New dark palettes are declared compactly (identity colors only); the ~50 other
+# variables are DERIVED so contrast stays correct and adding a theme is a few
+# lines. Code blocks are always dark (github-dark syntax), so their variables are
+# deep tints in every theme.
+def _hx(c):
+    c = c.lstrip('#')
+    return tuple(int(c[i:i+2], 16) for i in (0, 2, 4))
+
+
+def _rgb(t):
+    return '#%02x%02x%02x' % tuple(max(0, min(255, int(round(v)))) for v in t)
+
+
+def _mix(a, b, t):
+    (ra, ga, ba), (rb, gb, bb) = _hx(a), _hx(b)
+    return _rgb((ra + (rb - ra) * t, ga + (gb - ga) * t, ba + (bb - ba) * t))
+
+
+def _dk(a, t):
+    return _mix(a, '#000000', t)
+
+
+def _lt(a, t):
+    return _mix(a, '#ffffff', t)
+
+
+def _rgba(a, alpha):
+    r, g, b = _hx(a)
+    return f'rgba({r}, {g}, {b}, {alpha})'
+
+
+def _dark_theme(bg, surface, text, muted, heading, accent, accent2, active=None):
+    """Full CSS-variable block for a dark theme, derived from identity colors."""
+    active = active or accent2
+    sbg = _dk(bg, 0.30)          # sidebar a touch darker than the page
+    cbg = _dk(bg, 0.55)          # code block: deep, theme-tinted near-black
+    return (
+        "  color-scheme: dark;\n"
+        f"  --pico-primary:        {accent};\n"
+        f"  --pico-primary-hover:  {_lt(accent, 0.20)};\n"
+        f"  --pico-primary-focus:  {_rgba(accent, 0.28)};\n"
+        f"  --pico-primary-inverse:{_dk(bg, 0.2)};\n"
+        f"  --pico-color:          {text};\n"
+        f"  --pico-h1-color:       {heading};\n"
+        f"  --pico-h2-color:       {heading};\n"
+        f"  --pico-h3-color:       {_lt(accent2, 0.12)};\n"
+        f"  --pico-h4-color:       {text};\n"
+        f"  --pico-muted-color:    {muted};\n"
+        f"  --bg:              {bg};\n"
+        f"  --surface:         {surface};\n"
+        f"  --sidebar-bg:      {sbg};\n"
+        f"  --sidebar-text:    {muted};\n"
+        f"  --sidebar-head:    {heading};\n"
+        f"  --sidebar-active:  {active};\n"
+        "  --sidebar-hover:   rgba(255,255,255,.07);\n"
+        f"  --text:            {text};\n"
+        f"  --text-muted:      {muted};\n"
+        f"  --heading:         {heading};\n"
+        f"  --accent:          {accent};\n"
+        f"  --accent2:         {accent2};\n"
+        f"  --code-bg:         {cbg};\n"
+        "  --code-fg:         #e6edf3;\n"
+        f"  --code-border:     {_lt(cbg, 0.14)};\n"
+        f"  --ic-bg:           {_lt(bg, 0.10)};\n"
+        f"  --ic-fg:           {_lt(accent2, 0.15)};\n"
+        f"  --quiz-bg:         {_mix(surface, accent2, 0.12)};\n"
+        f"  --quiz-border:     {accent2};\n"
+        f"  --quiz-text-link-bg: {_mix(bg, accent2, 0.22)};\n"
+        "  --ans-border:      #4ade80;\n"
+        f"  --ans-sum-bg:      {_mix(bg, '#16a34a', 0.22)};\n"
+        "  --ans-sum-text:    #bbf7d0;\n"
+        f"  --ans-body-bg:     {_mix(bg, '#16a34a', 0.10)};\n"
+        "  --opt-border:      #fbbf24;\n"
+        f"  --opt-sum-bg:      {_mix(bg, '#d97706', 0.20)};\n"
+        "  --opt-sum-text:    #fde68a;\n"
+        f"  --opt-body-bg:     {_mix(bg, '#d97706', 0.09)};\n"
+        f"  --border:          {_lt(bg, 0.14)};\n"
+        f"  --table-row-hover: {_lt(bg, 0.06)};\n"
+        f"  --meta-bg:         {surface};\n"
+        "  --shadow:          0 2px 8px rgba(0,0,0,.4), 0 1px 3px rgba(0,0,0,.3);\n"
+        f"  --bg-grad:         radial-gradient(1000px 550px at 15% -8%, {_lt(bg,0.09)} 0%, {_rgba(bg,0)} 60%), {bg};\n"
+        f"  --sidebar-grad:    linear-gradient(180deg, {_lt(sbg,0.06)} 0%, {sbg} 55%);\n"
+        f"  --h1-grad-a:       {accent};\n"
+        f"  --h1-grad-b:       {accent2};\n"
+        f"  --strong-color:    {_lt(accent, 0.28)};\n"
+        f"  --em-color:        {_lt(accent2, 0.20)};\n"
+        f"  --marker-color:    {accent2};\n"
+        f"  --thead-bg:        {_lt(bg, 0.14)};\n"
+        f"  --thead-fg:        {heading};\n"
+        f"  --hr-grad:         linear-gradient(90deg, {accent}, {accent2}, transparent);\n"
+        f"  --link-hover:      {_lt(accent, 0.25)};\n"
+    )
+
+
+# Calm, professional dark palettes (canonical hex from each theme's spec).
+_NORD_VARS = _dark_theme(
+    bg='#2e3440', surface='#3b4252', text='#e5e9f0', muted='#9aa4b8',
+    heading='#eceff4', accent='#88c0d0', accent2='#81a1c1', active='#8fbcbb')
+_TOKYO_VARS = _dark_theme(
+    bg='#24283b', surface='#2f334d', text='#c0caf5', muted='#828bb8',
+    heading='#c0caf5', accent='#7aa2f7', accent2='#bb9af7', active='#7dcfff')
+_CATPPUCCIN_VARS = _dark_theme(
+    bg='#1e1e2e', surface='#313244', text='#cdd6f4', muted='#a6adc8',
+    heading='#cdd6f4', accent='#cba6f7', accent2='#89b4fa', active='#b4befe')
+_ROSEPINE_VARS = _dark_theme(
+    bg='#191724', surface='#26233a', text='#e0def4', muted='#908caa',
+    heading='#e0def4', accent='#c4a7e7', accent2='#9ccfd8', active='#ebbcba')
+
 THEME_CSS = (
-    "/* ── Themes: one variable set, five fixed palettes ─────────────────── */\n"
+    "/* ── Themes: one variable set, seven fixed palettes ─────────────────── */\n"
     ":root {\n"
     "  --pico-text-decoration: none;\n"
     "  /* Fluid typography: ~17 px on phones up to ~19 px on wide displays. */\n"
@@ -397,9 +399,11 @@ THEME_CSS = (
     "   out-rank the vendored Pico sheet's own :root:not([data-theme=dark]) light\n"
     "   block, which would otherwise force light text/background variables onto\n"
     "   every theme not literally named 'dark'. */\n"
-    ":root:not([data-theme]), :root[data-theme=aurora] {\n" + _AURORA_VARS + "}\n\n"
-    ":root[data-theme=midnight] {\n" + _MIDNIGHT_VARS + "}\n\n"
-    ":root[data-theme=synthwave] {\n" + _SYNTHWAVE_VARS + "}\n\n"
+    ":root:not([data-theme]), :root[data-theme=midnight] {\n" + _MIDNIGHT_VARS + "}\n\n"
+    ":root[data-theme=nord] {\n" + _NORD_VARS + "}\n\n"
+    ":root[data-theme=tokyo] {\n" + _TOKYO_VARS + "}\n\n"
+    ":root[data-theme=catppuccin] {\n" + _CATPPUCCIN_VARS + "}\n\n"
+    ":root[data-theme=rosepine] {\n" + _ROSEPINE_VARS + "}\n\n"
     ":root[data-theme=paper] {\n" + _PAPER_VARS + "}\n\n"
     ":root[data-theme=sepia] {\n" + _SEPIA_VARS + "}\n\n"
     "/* Map Pico's surface variables onto the active theme, so element styling\n"
@@ -834,19 +838,24 @@ figure.code-listing {
   background: var(--code-bg);
   box-shadow: var(--shadow);
 }
+/* The figure is always a dark code block (github-dark syntax), so its caption
+   and line numbers use light, code-oriented colors in EVERY theme, never the
+   page-surface variables (which are light in light themes). */
 figure.code-listing > figcaption {
-  background: var(--surface);
-  color: var(--sidebar-head);
+  background: rgba(255,255,255,.05);
+  color: var(--code-fg);
   font-size: .84rem;
   font-weight: 600;
   padding: .5rem .9rem;
   border-bottom: 1px solid var(--code-border);
 }
+figure.code-listing > figcaption a { color: var(--link-hover); }
 /* the Pygments table renderer nested inside the figure carries no box of its own */
 figure.code-listing .codehilite {
   margin: 0;
   border: none;
   border-radius: 0;
+  background: transparent;
 }
 figure.code-listing table.codehilitetable {
   width: 100%;
@@ -854,21 +863,26 @@ figure.code-listing table.codehilitetable {
   display: block;
   overflow-x: auto;
 }
+/* Line numbers read as a faint gutter that blends into the code, not a table
+   column: no rule, no separate background, low-opacity light numerals. */
 figure.code-listing td.linenos,
 figure.code-listing .linenos {
-  color: var(--text-muted);
+  color: var(--code-fg);
+  opacity: .3;
   text-align: right;
-  padding: 0 .8rem 0 .6rem;
+  padding: 0 .55rem 0 .25rem;
   user-select: none;
   -webkit-user-select: none;
   white-space: nowrap;
-  border-right: 1px solid var(--code-border);
+  border: none;
+  background: transparent;
   width: 1%;
 }
+figure.code-listing td.linenos .linenodiv pre { margin: 0; background: transparent; border: none; }
 figure.code-listing td.code { width: 100%; }
 figure.code-listing td.code pre { margin: 0; }
 @media (max-width: 600px) {
-  figure.code-listing td.linenos { padding: 0 .45rem; font-size: .8rem; }
+  figure.code-listing td.linenos { padding: 0 .35rem; font-size: .8rem; }
   figure.code-listing > figcaption { font-size: .8rem; padding: .4rem .6rem; }
 }
 @media print { figure.code-listing { break-inside: avoid; } }
@@ -1042,16 +1056,18 @@ details.optional-section[open] > summary::before { transform: rotate(90deg); }
 .exam-cta a {
   display: inline-block;
   background: var(--accent);
-  color: #fff !important;
+  /* contrast-correct in every theme: dark text on light pastel accents (dark
+     themes), light text on strong accents (light themes) */
+  color: var(--pico-primary-inverse) !important;
   padding: .3rem .85rem;
   border-radius: 5px;
   font-weight: 600;
   font-size: .9rem;
   text-decoration: none !important;
-  box-shadow: 0 2px 6px rgba(37,99,235,.2);
+  box-shadow: var(--shadow);
   transition: background .15s, transform .1s;
 }
-.exam-cta a:hover { background: #1d4ed8; transform: translateY(-1px); }
+.exam-cta a:hover { background: var(--pico-primary-hover); transform: translateY(-1px); }
 /* Inside .meta-block, links are inline within prose; render as text links, not buttons. */
 .meta-block .exam-cta { text-align: left; margin: 0; }
 .meta-block .exam-cta a {
@@ -1145,7 +1161,7 @@ SIDEBAR_JS = r"""
   // ── Theme picker ───────────────────────────────────────────────────────
   var swatches = Array.from(sidebar.querySelectorAll('.theme-swatch'));
   function markTheme() {
-    var cur = document.documentElement.getAttribute('data-theme') || 'aurora';
+    var cur = document.documentElement.getAttribute('data-theme') || 'midnight';
     swatches.forEach(function (b) {
       b.classList.toggle('sel', b.getAttribute('data-theme-pick') === cur);
     });
